@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h2>Список изображений</h2>
+  {% if images %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Изображение</th>
+          <th>Класс объекта</th>
+          <th>Дата загрузки</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for image in images %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><img src="{{ image.image.url }}" alt="Image" width="100"></td>
+            <td>{{ image.object_class }}</td>
+            <td>{{ image.uploaded_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Нет доступных изображений.</p>
+  {% endif %}
+</div>
+
+
+{% endblock %}
