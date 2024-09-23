@@ -1,0 +1,4 @@
+medical_segmentation/checkpoints
+medical_segmentation/media/uploads
+medical_segmentation/media/masks
+medical_segmentation/db.sqlite3
