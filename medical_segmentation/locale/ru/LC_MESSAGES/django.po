@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-23 19:53+0400\n"
+"POT-Creation-Date: 2024-09-24 09:16+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,48 +22,67 @@ msgstr ""
 
 #: medical_segmentation/settings.py:120
 msgid "English"
-msgstr ""
+msgstr "Английский"
 
 #: medical_segmentation/settings.py:121
 msgid "Russian"
-msgstr ""
+msgstr "Русский"
 
 #: segmentation/forms.py:22
 msgid "Images"
-msgstr ""
+msgstr "Изображения"
 
-#: segmentation/forms.py:23 segmentation/models.py:14
+#: segmentation/forms.py:25 segmentation/models.py:14
+#: templates/segmentation/image_list.html:12
 msgid "Object Class"
-msgstr ""
+msgstr "Класс объекта"
 
 #: segmentation/models.py:5
 msgid "Name"
-msgstr ""
+msgstr "Имя"
 
 #: segmentation/models.py:6
 msgid "Description"
-msgstr ""
+msgstr "Описание"
 
-#: segmentation/models.py:12
+#: segmentation/models.py:12 templates/segmentation/image_list.html:11
+#: templates/segmentation/image_list.html:20
 msgid "Image"
-msgstr ""
+msgstr "Изображение"
 
 #: segmentation/models.py:18
 msgid "Mask"
-msgstr ""
+msgstr "Маска"
 
 #: segmentation/models.py:21
 msgid "Uploaded At"
-msgstr ""
+msgstr "Дата загрузки"
 
-#: templates/base.html:6 templates/base.html:12
+#: templates/base.html:7 templates/base.html:13
 msgid "Object Segmentation"
-msgstr ""
+msgstr "Сегментация объектов"
 
-#: templates/base.html:16
+#: templates/base.html:17
 msgid "Upload Multiple Images"
-msgstr ""
+msgstr "Загрузить несколько изображений"
 
-#: templates/base.html:19
+#: templates/base.html:20 templates/segmentation/image_list.html:5
 msgid "Image List"
-msgstr ""
+msgstr "Список изображений"
+
+#: templates/segmentation/image_list.html:13
+#, fuzzy
+#| msgid "Uploaded At"
+msgid "Upload Date"
+msgstr "Дата загрузки"
+
+#: templates/segmentation/image_list.html:28
+msgid "No images available."
+msgstr "Невозможно загрузить изображение"
+
+#: templates/segmentation/upload_multiple_images.html:5
+#: templates/segmentation/upload_multiple_images.html:9
+#, fuzzy
+#| msgid "Uploaded At"
+msgid "Upload Images"
+msgstr "Дата загрузки"

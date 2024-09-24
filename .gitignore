@@ -2,3 +2,65 @@ medical_segmentation/checkpoints
 medical_segmentation/media/uploads
 medical_segmentation/media/masks
 medical_segmentation/db.sqlite3
+
+# Системные файлы операционной системы
+*.DS_Store
+*.swp
+*.swo
+*.~lock.*
+Thumbs.db
+
+# Локальные конфигурации и файлы IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Python файлы
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.pkl
+
+# Логи и временные файлы
+*.log
+*.pot
+*.mo
+*.~backup
+*.tmp
+*.bak
+*.pid
+*.coverage
+.coverage.*
+.cache/
+celerybeat-schedule
+*.env
+
+# Файлы виртуального окружения
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Библиотеки установленные с помощью pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# База данных SQLite
+db.sqlite3
+db.sqlite3-journal
+
+# Статика, медиафайлы и скомпилированные ассеты
+staticfiles/
+media/
+static/
+static_root/
+media_root/
+
+# Миграции, сгенерированные Django
+*/migrations/*
+!*/migrations/__init__.py
+
+# Секретные настройки (например, переменные окружения)
+.env

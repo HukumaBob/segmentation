@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -20,6 +21,12 @@ class ImageUpload(models.Model):
     uploaded_at = models.DateTimeField(
         _('Uploaded At'), auto_now_add=True
         )
+    def delete(self, *args, **kwargs):
+        # Удаление файла изображения перед удалением записи
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)    
 
     def __str__(self):
         return f"Image {self.id} - {self.object_class or _('No class')}"
