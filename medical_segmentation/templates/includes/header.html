@@ -11,6 +11,12 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'image_list' %}">{% trans "Image List" %}</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'upload_video_and_extract_frames' %}">{% trans "Upload video" %}</a>
+        </li>
+        {% comment %} <li class="nav-item">
+          <a class="nav-link" href="{% url 'frame_list' %}">{% trans "Frame List" %}</a>
+        </li>                 {% endcomment %}
       </ul>
       <form action="{% url 'set_language' %}" method="post" class="d-flex">
         {% csrf_token %}

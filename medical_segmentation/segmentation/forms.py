@@ -24,3 +24,9 @@ class MultipleImageUploadForm(forms.Form):
         queryset=ObjectClass.objects.all(),
         label=_("Object Class")
         )
+
+class VideoUploadForm(forms.Form):
+    video = forms.FileField(label='Выберите видеофайл')
+    start_time = forms.FloatField(label='Начало (в секундах)', required=True, initial=0)
+    duration = forms.FloatField(label='Продолжительность (в секундах)', required=True, initial=5)
+    fps = forms.IntegerField(label='Частота кадров (FPS)', required=True, initial=1)
