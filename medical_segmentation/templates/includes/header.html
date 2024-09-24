@@ -1,0 +1,27 @@
+{% load static %}
+{% load i18n %}
+<nav id="navbar" class="navbar navbar-expand-lg {% if request.COOKIES.theme == 'dark' %}dark-mode{% else %}navbar-light bg-light{% endif %}">
+  <div class="container">
+    <a class="navbar-brand" href="/">{% trans "Object Segmentation" %}</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'upload_multiple_images' %}">{% trans "Upload Multiple Images" %}</a>
+        </li>         
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'image_list' %}">{% trans "Image List" %}</a>
+        </li>
+      </ul>
+      <form action="{% url 'set_language' %}" method="post" class="d-flex">
+        {% csrf_token %}
+        <select name="language" class="form-select me-2" onchange="this.form.submit()">
+          <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+          <option value="ru" {% if LANGUAGE_CODE == 'ru' %}selected{% endif %}>Русский</option>
+        </select>
+      </form>
+      <button id="theme-toggle" class="btn btn-outline-secondary ms-2">
+        {% if request.COOKIES.theme == 'dark' %}Light Mode{% else %}Dark Mode{% endif %}
+      </button>
+    </div>
+  </div>
+</nav>  
