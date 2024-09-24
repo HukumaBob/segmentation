@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+  <div class="container">
+    <h2>{% trans "Extracted Frames" %}</h2>
+    <div class="row">
+      {% for frame in frames %}
+        <div class="col-md-3">
+          <img src="{{ frame }}" class="img-fluid" alt="Frame">
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

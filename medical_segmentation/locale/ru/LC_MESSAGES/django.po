@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-24 09:16+0400\n"
+"POT-Creation-Date: 2024-09-24 16:56+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,11 +20,11 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: medical_segmentation/settings.py:120
+#: medical_segmentation/settings.py:123
 msgid "English"
 msgstr "Английский"
 
-#: medical_segmentation/settings.py:121
+#: medical_segmentation/settings.py:124
 msgid "Russian"
 msgstr "Русский"
 
@@ -32,56 +32,64 @@ msgstr "Русский"
 msgid "Images"
 msgstr "Изображения"
 
-#: segmentation/forms.py:25 segmentation/models.py:14
-#: templates/segmentation/image_list.html:12
+#: segmentation/forms.py:25 segmentation/models.py:15
+#: templates/segmentation/image_list.html:15
 msgid "Object Class"
 msgstr "Класс объекта"
 
-#: segmentation/models.py:5
+#: segmentation/models.py:6
 msgid "Name"
 msgstr "Имя"
 
-#: segmentation/models.py:6
+#: segmentation/models.py:7
 msgid "Description"
 msgstr "Описание"
 
-#: segmentation/models.py:12 templates/segmentation/image_list.html:11
-#: templates/segmentation/image_list.html:20
+#: segmentation/models.py:13 templates/segmentation/image_list.html:14
+#: templates/segmentation/image_list.html:24
 msgid "Image"
 msgstr "Изображение"
 
-#: segmentation/models.py:18
+#: segmentation/models.py:19
 msgid "Mask"
 msgstr "Маска"
 
-#: segmentation/models.py:21
+#: segmentation/models.py:22
 msgid "Uploaded At"
 msgstr "Дата загрузки"
 
-#: templates/base.html:7 templates/base.html:13
+#: templates/base.html:8 templates/includes/header.html:5
 msgid "Object Segmentation"
 msgstr "Сегментация объектов"
 
-#: templates/base.html:17
+#: templates/includes/header.html:9
 msgid "Upload Multiple Images"
 msgstr "Загрузить несколько изображений"
 
-#: templates/base.html:20 templates/segmentation/image_list.html:5
+#: templates/includes/header.html:12 templates/segmentation/image_list.html:6
 msgid "Image List"
 msgstr "Список изображений"
 
-#: templates/segmentation/image_list.html:13
+#: templates/segmentation/image_list.html:16
 #, fuzzy
 #| msgid "Uploaded At"
 msgid "Upload Date"
 msgstr "Дата загрузки"
 
+#: templates/segmentation/image_list.html:17
+msgid "Delete Selected"
+msgstr "Удалить отмеченные"
+
 #: templates/segmentation/image_list.html:28
+msgid "Delete Image"
+msgstr "Удалить изображение"
+
+#: templates/segmentation/image_list.html:35
 msgid "No images available."
 msgstr "Невозможно загрузить изображение"
 
-#: templates/segmentation/upload_multiple_images.html:5
-#: templates/segmentation/upload_multiple_images.html:9
+#: templates/segmentation/upload_multiple_images.html:6
+#: templates/segmentation/upload_multiple_images.html:10
 #, fuzzy
 #| msgid "Uploaded At"
 msgid "Upload Images"

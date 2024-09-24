@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+  <div class="container">
+    <h2>{% trans "Upload Video" %}</h2>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">{% trans "Convert Video" %}</button>
+    </form>
+    
+    <!-- Для предпросмотра загруженного видео -->
+    {% if form.is_valid %}
+      <h3>{% trans "Video Preview" %}</h3>
+      <video width="320" height="240" controls>
+        <source src="{{ video_url }}" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    {% endif %}
+  </div>
+{% endblock %}
