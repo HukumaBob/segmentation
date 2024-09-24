@@ -20,4 +20,7 @@ class MultipleFileField(forms.FileField):
 
 class MultipleImageUploadForm(forms.Form):
     images = MultipleFileField(label=_("Images"))
-    object_class = forms.ModelChoiceField(queryset=ObjectClass.objects.all(), label=_("Object Class"))
+    object_class = forms.ModelChoiceField(
+        queryset=ObjectClass.objects.all(),
+        label=_("Object Class")
+        )
