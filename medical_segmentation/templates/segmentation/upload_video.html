@@ -5,68 +5,84 @@
 {% block content %}
 <div class="container">
     <h2>{% trans "Upload Video" %}</h2>
-    <input type="file" id="videoInput" accept="video/*">
-    <div id="conversionStatus" style="display: none;">
+
+    <!-- Форма для загрузки видео -->
+    <form id="videoUploadForm" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">{% trans "Upload Video" %}</button>
+    </form>
+    
+    <!-- Статус конвертации -->
+    <div id="conversionStatus" style="display: none; margin-top: 20px;">
         <p>{% trans "Converting..." %}</p>
         <div class="progress">
             <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
     </div>
-    <div id="videoPreview" style="display: none;">
-        <video id="videoPlayer" controls></video>
-        <button id="deleteButton">{% trans "Delete File" %}</button>
+
+    <!-- Предпросмотр видео -->
+    <div id="videoPreview" style="display: none; margin-top: 20px;">
+        <video id="videoPlayer" controls width="640" height="360"></video>
+        <button id="deleteButton" class="btn btn-danger" style="margin-top: 10px;">{% trans "Delete File" %}</button>
         
-        <!-- Поля ввода для параметров -->
+        <!-- Параметры для создания последовательности кадров -->
         <div id="frameParameters" style="margin-top: 20px;">
             <h3>{% trans "Frame Extraction Parameters" %}</h3>
-            <label for="startTime">{% trans "Start Time (seconds):" %}</label>
-            <input type="number" id="startTime" value="0" step="0.1" min="0"><br>
-            <label for="duration">{% trans "Duration (seconds):" %}</label>
-            <input type="number" id="duration" value="10" step="0.1" min="0"><br>
-            <label for="fps">{% trans "Frames Per Second (FPS):" %}</label>
-            <input type="number" id="fps" value="10" step="1" min="1"><br>
-            <button id="createFramesButton" style="display: none;">{% trans "Create Frame Sequence" %}</button>
+            <div class="form-group">
+                <label for="startTime">{% trans "Start Time (seconds):" %}</label>
+                <input type="number" id="startTime" class="form-control" value="0" step="0.1" min="0">
+            </div>
+            <div class="form-group">
+                <label for="duration">{% trans "Duration (seconds):" %}</label>
+                <input type="number" id="duration" class="form-control" value="10" step="0.1" min="0">
+            </div>
+            <div class="form-group">
+                <label for="fps">{% trans "Frames Per Second (FPS):" %}</label>
+                <input type="number" id="fps" class="form-control" value="10" step="1" min="1">
+            </div>
+            <button id="createFramesButton" class="btn btn-success" style="display: none; margin-top: 10px;">{% trans "Create Frame Sequence" %}</button>
         </div>
     </div>
 </div>
 
 <script>
-    document.getElementById('videoInput').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const formData = new FormData();
-            formData.append('video', file);
+    // Логика загрузки видео через AJAX
+    document.getElementById('videoUploadForm').addEventListener('submit', function(event) {
+        event.preventDefault();
 
-            document.getElementById('conversionStatus').style.display = 'block';
-            document.getElementById('progressBar').style.width = '0%';
+        const formData = new FormData(this);
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', "{% url 'upload_video' %}", true);
-            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+        document.getElementById('conversionStatus').style.display = 'block';
+        document.getElementById('progressBar').style.width = '0%';
 
-            xhr.upload.onprogress = function(event) {
-                if (event.lengthComputable) {
-                    const percentComplete = (event.loaded / event.total) * 100;
-                    document.getElementById('progressBar').style.width = percentComplete + '%';
-                }
-            };
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', "{% url 'upload_video' %}", true);
+        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    document.getElementById('conversionStatus').style.display = 'none';
-                    document.getElementById('videoPlayer').src = data.file_url;
-                    document.getElementById('videoPreview').style.display = 'block';
-                    document.getElementById('deleteButton').dataset.fileUrl = data.file_url;
-                    document.getElementById('createFramesButton').style.display = 'block';
-                    document.getElementById('createFramesButton').dataset.videoFilename = data.file_url.split('/').pop();
-                }
-            };
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                document.getElementById('progressBar').style.width = percentComplete + '%';
+            }
+        };
 
-            xhr.send(formData);
-        }
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                document.getElementById('conversionStatus').style.display = 'none';
+                document.getElementById('videoPlayer').src = data.file_url;
+                document.getElementById('videoPreview').style.display = 'block';
+                document.getElementById('deleteButton').dataset.fileUrl = data.file_url;
+                document.getElementById('createFramesButton').style.display = 'block';
+                document.getElementById('createFramesButton').dataset.videoId = data.video_id;  // Изменено на video_id
+            }
+        };
+
+        xhr.send(formData);
     });
 
+    // Логика удаления видео
     document.getElementById('deleteButton').addEventListener('click', function() {
         const fileUrl = this.dataset.fileUrl;
         fetch("{% url 'delete_video' %}", {
@@ -90,14 +106,15 @@
         .catch(error => console.error('Error:', error));
     });
 
+    // Логика создания последовательности кадров
     document.getElementById('createFramesButton').addEventListener('click', function() {
-        const videoFilename = this.dataset.videoFilename;
+        const videoId = this.dataset.videoId;  // Получаем video_id
         const startTime = document.getElementById('startTime').value;
         const duration = document.getElementById('duration').value;
         const fps = document.getElementById('fps').value;
 
         // Передаем параметры в запрос
-        const url = "{% url 'create_frame_sequence' 'video_filename' %}".replace('video_filename', videoFilename) +
+        const url = "{% url 'create_frame_sequence' 'video_id' %}".replace('video_id', videoId) +
             `?start_time=${startTime}&duration=${duration}&fps=${fps}`;
 
         fetch(url, {
@@ -109,6 +126,14 @@
         .then(response => {
             if (response.redirected) {
                 window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                // Здесь можно отобразить сообщение об ошибке на странице
             }
         })
         .catch(error => console.error('Error:', error));

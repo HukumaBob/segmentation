@@ -36,10 +36,10 @@ class Video(models.Model):
     title = models.CharField(max_length=255, verbose_name="Название видео")
     description = models.TextField(blank=True, verbose_name="Описание видео")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    video_file = models.FileField(upload_to='videos/', verbose_name="Файл видео")
+    video_file = models.FileField(upload_to='videos/', unique=True, verbose_name="Файл видео")
 
     def __str__(self):
-        return self.title
+        return f" Видео ({self.id}) {self.title}"
 
 
 class FrameSequence(models.Model):
