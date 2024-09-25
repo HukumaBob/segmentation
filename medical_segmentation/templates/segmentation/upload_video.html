@@ -3,21 +3,99 @@
 {% load i18n %}
 
 {% block content %}
-  <div class="container">
+<div class="container">
     <h2>{% trans "Upload Video" %}</h2>
-    <form method="POST" enctype="multipart/form-data">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">{% trans "Convert Video" %}</button>
-    </form>
-    
-    <!-- Для предпросмотра загруженного видео -->
-    {% if form.is_valid %}
-      <h3>{% trans "Video Preview" %}</h3>
-      <video width="320" height="240" controls>
-        <source src="{{ video_url }}" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-    {% endif %}
-  </div>
+    <input type="file" id="videoInput" accept="video/*">
+    <div id="conversionStatus" style="display: none;">
+        <p>{% trans "Converting..." %}</p>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+    <div id="videoPreview" style="display: none;">
+        <video id="videoPlayer" controls></video>
+        <button id="deleteButton">{% trans "Delete File" %}</button>
+        <button id="createFramesButton" style="display: none;">{% trans "Create Frame Sequence" %}</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('videoInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('video', file);
+
+            document.getElementById('conversionStatus').style.display = 'block';
+            document.getElementById('progressBar').style.width = '0%';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', "{% url 'upload_video' %}", true);
+            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    document.getElementById('progressBar').style.width = percentComplete + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    document.getElementById('conversionStatus').style.display = 'none';
+                    document.getElementById('videoPlayer').src = data.file_url;
+                    document.getElementById('videoPreview').style.display = 'block';
+                    document.getElementById('deleteButton').dataset.fileUrl = data.file_url;
+                    document.getElementById('createFramesButton').style.display = 'block';
+                    document.getElementById('createFramesButton').dataset.videoFilename = data.file_url.split('/').pop();
+                }
+            };
+
+            xhr.send(formData);
+        }
+    });
+
+    document.getElementById('deleteButton').addEventListener('click', function() {
+        const fileUrl = this.dataset.fileUrl;
+        fetch("{% url 'delete_video' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `file_url=${encodeURIComponent(fileUrl)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('videoPreview').style.display = 'none';
+                document.getElementById('videoPlayer').src = '';
+                document.getElementById('createFramesButton').style.display = 'none';
+            } else {
+                console.error('Error deleting file:', data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('createFramesButton').addEventListener('click', function() {
+      const videoFilename = this.dataset.videoFilename;
+  
+      // Заменяем video_filename на реальное имя файла в URL
+      fetch("{% url 'create_frame_sequence' 'video_filename' %}".replace('video_filename', videoFilename), {
+          method: 'GET',
+          headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+          }
+      })
+      .then(response => {
+          if (response.redirected) {
+              window.location.href = response.url;
+          }
+      })
+      .catch(error => console.error('Error:', error));
+  });
+  
+</script>
 {% endblock %}
