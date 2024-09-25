@@ -15,7 +15,18 @@
     <div id="videoPreview" style="display: none;">
         <video id="videoPlayer" controls></video>
         <button id="deleteButton">{% trans "Delete File" %}</button>
-        <button id="createFramesButton" style="display: none;">{% trans "Create Frame Sequence" %}</button>
+        
+        <!-- Поля ввода для параметров -->
+        <div id="frameParameters" style="margin-top: 20px;">
+            <h3>{% trans "Frame Extraction Parameters" %}</h3>
+            <label for="startTime">{% trans "Start Time (seconds):" %}</label>
+            <input type="number" id="startTime" value="0" step="0.1" min="0"><br>
+            <label for="duration">{% trans "Duration (seconds):" %}</label>
+            <input type="number" id="duration" value="10" step="0.1" min="0"><br>
+            <label for="fps">{% trans "Frames Per Second (FPS):" %}</label>
+            <input type="number" id="fps" value="10" step="1" min="1"><br>
+            <button id="createFramesButton" style="display: none;">{% trans "Create Frame Sequence" %}</button>
+        </div>
     </div>
 </div>
 
@@ -80,22 +91,27 @@
     });
 
     document.getElementById('createFramesButton').addEventListener('click', function() {
-      const videoFilename = this.dataset.videoFilename;
-  
-      // Заменяем video_filename на реальное имя файла в URL
-      fetch("{% url 'create_frame_sequence' 'video_filename' %}".replace('video_filename', videoFilename), {
-          method: 'GET',
-          headers: {
-              'X-CSRFToken': '{{ csrf_token }}'
-          }
-      })
-      .then(response => {
-          if (response.redirected) {
-              window.location.href = response.url;
-          }
-      })
-      .catch(error => console.error('Error:', error));
-  });
-  
+        const videoFilename = this.dataset.videoFilename;
+        const startTime = document.getElementById('startTime').value;
+        const duration = document.getElementById('duration').value;
+        const fps = document.getElementById('fps').value;
+
+        // Передаем параметры в запрос
+        const url = "{% url 'create_frame_sequence' 'video_filename' %}".replace('video_filename', videoFilename) +
+            `?start_time=${startTime}&duration=${duration}&fps=${fps}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
 </script>
 {% endblock %}

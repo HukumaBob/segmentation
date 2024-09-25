@@ -2,14 +2,14 @@ import os
 import subprocess
 import uuid
 
-def extract_frames_from_video(video_path, start_time, duration, output_folder):
+def extract_frames_from_video(video_path, start_time, duration, fps, output_folder):
     # Команда FFmpeg для извлечения кадров
     command = [
         'ffmpeg',
         '-ss', str(start_time),          # Начало фрагмента
         '-i', video_path,                # Входное видео
         '-t', str(duration),             # Длительность фрагмента
-        '-vf', 'fps=10',                  # Извлечение 1 кадра в секунду
+        '-r', str(fps),                   # Извлечение 10 кадра в секунду
         '-q:v', '0',                    # Качество изображений (0 - наивысшее, 31 - худшее)
         f'{output_folder}/%05d.jpg'      # Путь для сохранения кадров
     ]
