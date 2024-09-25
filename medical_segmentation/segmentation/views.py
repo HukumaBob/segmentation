@@ -96,7 +96,7 @@ def create_frame_sequence(request, video_filename):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    extract_frames_from_video(video_path, start_time=0, duration=10, output_folder=output_folder)
+    extract_frames_from_video(video_path, start_time=0, duration=10, fps=10, output_folder=output_folder)
 
     return redirect('frame_list', video_id=video_filename.split('.')[0])
 
