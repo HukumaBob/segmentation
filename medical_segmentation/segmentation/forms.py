@@ -26,7 +26,7 @@ class MultipleImageUploadForm(forms.Form):
         )
 
 class VideoUploadForm(forms.Form):
-    video = forms.FileField(label='Выберите видеофайл')
-    start_time = forms.FloatField(label='Начало (в секундах)', required=True, initial=0)
-    duration = forms.FloatField(label='Продолжительность (в секундах)', required=True, initial=5)
-    fps = forms.IntegerField(label='Частота кадров (FPS)', required=True, initial=1)
+    video = forms.FileField(widget=forms.ClearableFileInput(attrs={'id': 'id_video'}))
+    start_time = forms.FloatField(label=_('Начало (в секундах)'), required=True, initial=0)
+    duration = forms.FloatField(label=_('Продолжительность (в секундах)'), required=True, initial=5)
+    fps = forms.IntegerField(label=_('Частота кадров (FPS)'), required=True, initial=1)
