@@ -2,7 +2,7 @@ import os
 import subprocess
 import uuid
 
-def extract_frames_from_video(video_path, start_time, duration, fps, output_folder):
+def extract_frames_from_video(video_path, start_time, duration, fps, output_folder, left_crop=0, right_crop=0, top_crop=0, bottom_crop=0):
     # Проверяем, существует ли видеофайл
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"The video file '{video_path}' does not exist.")
@@ -18,6 +18,7 @@ def extract_frames_from_video(video_path, start_time, duration, fps, output_fold
         '-t', str(duration),             # Длительность фрагмента
         '-r', str(fps),                  # Частота кадров
         '-q:v', '0',                     # Качество изображений (0 - наивысшее, 31 - худшее)
+        '-vf', f"crop=iw-{left_crop + right_crop}:ih-{top_crop + bottom_crop}:{left_crop}:{top_crop}",  # Обрезка
         os.path.join(output_folder, '%05d.jpg')  # Путь для сохранения кадров с нумерацией файлов
     ]
     

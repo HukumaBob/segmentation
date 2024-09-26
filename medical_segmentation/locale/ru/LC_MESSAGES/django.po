@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-24 16:56+0400\n"
+"POT-Creation-Date: 2024-09-26 10:55+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,6 +58,47 @@ msgstr "Маска"
 msgid "Uploaded At"
 msgstr "Дата загрузки"
 
+#: segmentation/models.py:36
+msgid "Video title"
+msgstr "Название видео"
+
+#: segmentation/models.py:37
+#, fuzzy
+#| msgid "Description"
+msgid "Video description"
+msgstr "Описание видео"
+
+#: segmentation/models.py:38 segmentation/models.py:49
+#: segmentation/models.py:59
+msgid "Created at"
+msgstr "Дата создания"
+
+#: segmentation/models.py:39
+msgid "Video file"
+msgstr "Файл видео"
+
+#: segmentation/models.py:46
+msgid "Frames features"
+msgstr "Особенности кадров"
+
+#: segmentation/models.py:47
+msgid "Video"
+msgstr "Видео"
+
+#: segmentation/models.py:48 segmentation/models.py:56
+msgid "Frame"
+msgstr "Кадр"
+
+#: segmentation/models.py:57
+#, fuzzy
+#| msgid "Mask"
+msgid "Mask file"
+msgstr "Файл маски"
+
+#: segmentation/models.py:58
+msgid "Tagк"
+msgstr "Ярлык"
+
 #: templates/base.html:8 templates/includes/header.html:5
 msgid "Object Segmentation"
 msgstr "Сегментация объектов"
@@ -69,6 +110,16 @@ msgstr "Загрузить несколько изображений"
 #: templates/includes/header.html:12 templates/segmentation/image_list.html:6
 msgid "Image List"
 msgstr "Список изображений"
+
+#: templates/includes/header.html:15
+#, fuzzy
+#| msgid "Uploaded At"
+msgid "Upload video"
+msgstr "Загрузить видео"
+
+#: templates/segmentation/frame_list.html:7
+msgid "Extracted Frames"
+msgstr "Извлеченные кадры"
 
 #: templates/segmentation/image_list.html:16
 #, fuzzy
@@ -94,3 +145,45 @@ msgstr "Невозможно загрузить изображение"
 #| msgid "Uploaded At"
 msgid "Upload Images"
 msgstr "Дата загрузки"
+
+#: templates/segmentation/upload_video.html:11
+#: templates/segmentation/upload_video.html:15
+#, fuzzy
+#| msgid "Uploaded At"
+msgid "Upload Video"
+msgstr "Загрузить видео"
+
+#: templates/segmentation/upload_video.html:24
+#: templates/segmentation/upload_video.html:110
+msgid "Video Preview"
+msgstr "Предварительный просмотр видео"
+
+#: templates/segmentation/upload_video.html:26
+msgid "Converting..."
+msgstr "Конвертация..."
+
+#: templates/segmentation/upload_video.html:32
+#, fuzzy
+#| msgid "Delete Image"
+msgid "Delete File"
+msgstr "Удалить файл"
+
+#: templates/segmentation/upload_video.html:40
+msgid "Frame Extraction Parameters"
+msgstr "Параметры извлечения кадров"
+
+#: templates/segmentation/upload_video.html:44
+msgid "Start Time (seconds):"
+msgstr "Начальное время (секунды):"
+
+#: templates/segmentation/upload_video.html:50
+msgid "Duration (seconds):"
+msgstr "Продолжительность (секунды):"
+
+#: templates/segmentation/upload_video.html:56
+msgid "Frames Per Second (FPS):"
+msgstr "Кадры в секунду (FPS):"
+
+#: templates/segmentation/upload_video.html:61
+msgid "Create Frame Sequence"
+msgstr "Создать последовательность кадров"
