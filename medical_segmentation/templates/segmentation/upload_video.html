@@ -194,14 +194,20 @@
         if (createFramesButton) {
             createFramesButton.addEventListener('click', function() {
                 const videoId = this.dataset.videoId;
+                const sequenceName = document.getElementById('sequenceName').value; // Получаем значение Sequence Name
                 const startTime = document.getElementById('startTime').value;
                 const duration = document.getElementById('duration').value;
                 const fps = document.getElementById('fps').value;
-
+                const leftCrop = document.getElementById('leftCrop').value;
+                const rightCrop = document.getElementById('rightCrop').value;
+                const topCrop = document.getElementById('topCrop').value;
+                const bottomCrop = document.getElementById('bottomCrop').value;
+        
                 if (videoId) {
                     const url = "{% url 'create_frame_sequence' 'video_id' %}".replace('video_id', videoId) +
-                        `?start_time=${startTime}&duration=${duration}&fps=${fps}`;
-
+                        `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
+                        `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
+        
                     fetch(url, {
                         method: 'GET',
                         headers: {
@@ -224,6 +230,7 @@
                 }
             });
         }
+        
     });
 </script>
 {% endblock %}

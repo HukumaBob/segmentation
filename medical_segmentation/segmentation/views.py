@@ -112,29 +112,41 @@ def create_frame_sequence(request, video_id):
     # Получаем объект Video по уникальному идентификатору
     video = get_object_or_404(Video, id=video_id)
 
+    # Получаем параметры из запроса, включая Sequence Name
+    sequence_name = request.GET.get('sequence_name', 'Default Sequence Name')  # Используем значение по умолчанию
+    start_time = request.GET.get('start_time', 0)
+    duration = request.GET.get('duration', 10)
+    fps = request.GET.get('fps', 10)
+    left_crop = request.GET.get('left_crop', 0)
+    right_crop = request.GET.get('right_crop', 0)
+    top_crop = request.GET.get('top_crop', 0)
+    bottom_crop = request.GET.get('bottom_crop', 0)
+
     # Указываем путь к файлу видео и выходной директории для кадров
     video_path = os.path.join(settings.MEDIA_ROOT, video.video_file.name)  # Используем имя файла из объекта
     output_folder = os.path.join(settings.MEDIA_ROOT, 'frames', os.path.splitext(os.path.basename(video.video_file.name))[0])
 
     # Извлекаем кадры из видео и получаем список файлов
     extracted_frames = extract_frames_from_video(
-        video_path, start_time=request.GET.get('start_time', 0), duration=request.GET.get('duration', 10), 
-        fps=request.GET.get('fps', 10), output_folder=output_folder,
-        left_crop=75, right_crop=10, top_crop=15, bottom_crop=20
+        video_path, start_time=start_time, duration=duration, 
+        fps=fps, output_folder=output_folder,
+        left_crop=left_crop, right_crop=right_crop, top_crop=top_crop, bottom_crop=bottom_crop
     )
 
     if not extracted_frames:
         return JsonResponse({'error': 'No frames were extracted'})
 
-    # Сохраняем каждый кадр как объект FrameSequence
+    # Сохраняем каждый кадр как объект FrameSequence с учетом sequence_name
     for frame_path in extracted_frames:
         frame_str_path = str(frame_path)  # Приведение PosixPath к строке
         FrameSequence.objects.create(
+            features=sequence_name,  # Сохраняем имя последовательности
             video=video,
             frame_file=frame_str_path
         )
 
-    return redirect('frame_list', video_id=video.id) 
+    return redirect('frame_list', video_id=video.id)
+
 
 
 def frame_list(request, video_id):

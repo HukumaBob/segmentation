@@ -43,7 +43,7 @@ class Video(models.Model):
 
 
 class FrameSequence(models.Model):
-    features = models.CharField(max_length=255, verbose_name=_("Frames features")),
+    features = models.CharField(max_length=255, verbose_name=_("Frames features"))
     video = models.ForeignKey(Video, related_name='frame_sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
     frame_file = models.ImageField(upload_to='frames/', verbose_name=_("Frame"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
