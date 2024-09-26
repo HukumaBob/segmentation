@@ -119,7 +119,8 @@ def create_frame_sequence(request, video_id):
     # Извлекаем кадры из видео и получаем список файлов
     extracted_frames = extract_frames_from_video(
         video_path, start_time=request.GET.get('start_time', 0), duration=request.GET.get('duration', 10), 
-        fps=request.GET.get('fps', 10), output_folder=output_folder
+        fps=request.GET.get('fps', 10), output_folder=output_folder,
+        left_crop=75, right_crop=10, top_crop=15, bottom_crop=20
     )
 
     if not extracted_frames:

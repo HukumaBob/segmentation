@@ -3,140 +3,227 @@
 {% load i18n %}
 
 {% block content %}
-<div class="container">
-    <h2>{% trans "Upload Video" %}</h2>
-
-    <!-- Форма для загрузки видео -->
-    <form id="videoUploadForm" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">{% trans "Upload Video" %}</button>
-    </form>
-    
-    <!-- Статус конвертации -->
-    <div id="conversionStatus" style="display: none; margin-top: 20px;">
-        <p>{% trans "Converting..." %}</p>
-        <div class="progress">
-            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card mt-4 h-100">
+                <div class="card-body">
+                    <h2 class="card-title">{% trans "Upload Video" %}</h2>
+                    <form id="videoUploadForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary btn-block">{% trans "Upload Video" %}</button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Предпросмотр видео -->
-    <div id="videoPreview" style="display: none; margin-top: 20px;">
-        <video id="videoPlayer" controls width="640" height="360"></video>
-        <button id="deleteButton" class="btn btn-danger" style="margin-top: 10px;">{% trans "Delete File" %}</button>
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card mt-4 h-100" id="videoPreview">
+                <div class="card-body">
+                    <h2 id="previewTitle">{% trans "Video Preview" %}</h2>
+                    <div id="conversionStatus">
+                        <h4>{% trans "Converting..." %}</h4>
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <video id="videoPlayer" controls class="w-100" height="360" style="display: none;"></video>
+                    <button id="deleteButton" class="btn btn-danger btn-block mt-3" style="display: none;">{% trans "Delete File" %}</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card mt-4 h-100" id="frameParameters" style="display: none;">
+                <div class="card-body">
+                    <h3>{% trans "Frame Extraction Parameters" %}</h3>
+                    <div class="row mb-3"> <!-- Вторая строка -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="sequenceName">{% trans "Sequence Name:" %}</label>
+                                <input type="text" id="sequenceName" class="form-control" placeholder="{% trans "Enter Sequence Name" %}">
+                            </div>
+                        </div>                        
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="startTime">{% trans "Start Time (s):" %}</label>
+                                <input type="number" id="startTime" class="form-control" value="0" step="0.1" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="duration">{% trans "Duration (s):" %}</label>
+                                <input type="number" id="duration" class="form-control" value="10" step="0.1" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="fps">{% trans "FPS:" %}</label>
+                                <input type="number" id="fps" class="form-control" value="10" step="1" min="1">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row mb-3"> <!-- Третья строка -->
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="leftCrop">{% trans "Left Crop (px):" %}</label>
+                                <input type="number" id="leftCrop" class="form-control" value="0" step="1" min="0">
+                            </div>
+                        </div>                        
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="rightCrop">{% trans "Right Crop (px):" %}</label>
+                                <input type="number" id="rightCrop" class="form-control" value="0" step="1" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="topCrop">{% trans "Top Crop (px):" %}</label>
+                                <input type="number" id="topCrop" class="form-control" value="0" step="1" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="bottomCrop">{% trans "Bottom Crop (px):" %}</label>
+                                <input type="number" id="bottomCrop" class="form-control" value="0" step="1" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <button id="createFramesButton" class="btn btn-success btn-block" style="margin-top: 15px; display: none;">{% trans "Create Frame Sequence" %}</button>
+                </div>
+            </div>
+        </div>
         
-        <!-- Параметры для создания последовательности кадров -->
-        <div id="frameParameters" style="margin-top: 20px;">
-            <h3>{% trans "Frame Extraction Parameters" %}</h3>
-            <div class="form-group">
-                <label for="startTime">{% trans "Start Time (seconds):" %}</label>
-                <input type="number" id="startTime" class="form-control" value="0" step="0.1" min="0">
-            </div>
-            <div class="form-group">
-                <label for="duration">{% trans "Duration (seconds):" %}</label>
-                <input type="number" id="duration" class="form-control" value="10" step="0.1" min="0">
-            </div>
-            <div class="form-group">
-                <label for="fps">{% trans "Frames Per Second (FPS):" %}</label>
-                <input type="number" id="fps" class="form-control" value="10" step="1" min="1">
-            </div>
-            <button id="createFramesButton" class="btn btn-success" style="display: none; margin-top: 10px;">{% trans "Create Frame Sequence" %}</button>
-        </div>
-    </div>
 </div>
 
 <script>
-    // Логика загрузки видео через AJAX
-    document.getElementById('videoUploadForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+    document.addEventListener('DOMContentLoaded', function () {
+        const videoUploadForm = document.getElementById('videoUploadForm');
+        const conversionStatus = document.getElementById('conversionStatus');
+        const progressBar = document.getElementById('progressBar');
+        const videoPreview = document.getElementById('videoPlayer');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const deleteButton = document.getElementById('deleteButton');
+        const frameParameters = document.getElementById('frameParameters');
+        const createFramesButton = document.getElementById('createFramesButton');
+        const previewTitle = document.getElementById('previewTitle');
 
-        const formData = new FormData(this);
+        if (videoUploadForm) {
+            videoUploadForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(this);
+                // Показываем статус конвертации
+                if (conversionStatus) {
+                    conversionStatus.style.display = 'block';
+                }
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                }
 
-        document.getElementById('conversionStatus').style.display = 'block';
-        document.getElementById('progressBar').style.width = '0%';
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', "{% url 'upload_video' %}", true);
+                xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', "{% url 'upload_video' %}", true);
-        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                xhr.upload.onprogress = function(event) {
+                    if (event.lengthComputable && progressBar) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                    }
+                };
 
-        xhr.upload.onprogress = function(event) {
-            if (event.lengthComputable) {
-                const percentComplete = (event.loaded / event.total) * 100;
-                document.getElementById('progressBar').style.width = percentComplete + '%';
-            }
-        };
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        // Обновляем карточку с предпросмотром видео
+                        if (conversionStatus) {
+                            conversionStatus.style.display = 'none'; // Скрываем статус конвертации
+                            previewTitle.textContent = '{% trans "Video Preview" %}'; // Устанавливаем заголовок предпросмотра
+                            videoPlayer.src = data.file_url; // Устанавливаем источник видео
+                            videoPlayer.style.display = 'block'; // Показываем видео
+                        }
+                        if (deleteButton) {
+                            deleteButton.dataset.fileUrl = data.file_url; // Устанавливаем ссылку для удаления
+                            deleteButton.style.display = 'block'; // Показываем кнопку удаления
+                        }
+                        if (createFramesButton) {
+                            createFramesButton.style.display = 'block';
+                            createFramesButton.dataset.videoId = data.video_id;
+                        }
+                        if (frameParameters) {
+                            frameParameters.style.display = 'block';
+                        }
+                    }
+                };
 
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                const data = JSON.parse(xhr.responseText);
-                document.getElementById('conversionStatus').style.display = 'none';
-                document.getElementById('videoPlayer').src = data.file_url;
-                document.getElementById('videoPreview').style.display = 'block';
-                document.getElementById('deleteButton').dataset.fileUrl = data.file_url;
-                document.getElementById('createFramesButton').style.display = 'block';
-                document.getElementById('createFramesButton').dataset.videoId = data.video_id;  // Изменено на video_id
-            }
-        };
+                xhr.send(formData);
+            });
+        }
 
-        xhr.send(formData);
-    });
+        if (deleteButton) {
+            deleteButton.addEventListener('click', function() {
+                const fileUrl = this.dataset.fileUrl;
+                if (fileUrl) {
+                    fetch("{% url 'delete_video' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: `file_url=${encodeURIComponent(fileUrl)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (videoPlayer) {
+                                videoPlayer.style.display = 'none';
+                                videoPlayer.src = '';
+                            }
+                            if (deleteButton) deleteButton.style.display = 'none';
+                        } else {
+                            console.error('Error deleting file:', data.error);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+        }
 
-    // Логика удаления видео
-    document.getElementById('deleteButton').addEventListener('click', function() {
-        const fileUrl = this.dataset.fileUrl;
-        fetch("{% url 'delete_video' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: `file_url=${encodeURIComponent(fileUrl)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                document.getElementById('videoPreview').style.display = 'none';
-                document.getElementById('videoPlayer').src = '';
-                document.getElementById('createFramesButton').style.display = 'none';
-            } else {
-                console.error('Error deleting file:', data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
+        if (createFramesButton) {
+            createFramesButton.addEventListener('click', function() {
+                const videoId = this.dataset.videoId;
+                const startTime = document.getElementById('startTime').value;
+                const duration = document.getElementById('duration').value;
+                const fps = document.getElementById('fps').value;
 
-    // Логика создания последовательности кадров
-    document.getElementById('createFramesButton').addEventListener('click', function() {
-        const videoId = this.dataset.videoId;  // Получаем video_id
-        const startTime = document.getElementById('startTime').value;
-        const duration = document.getElementById('duration').value;
-        const fps = document.getElementById('fps').value;
+                if (videoId) {
+                    const url = "{% url 'create_frame_sequence' 'video_id' %}".replace('video_id', videoId) +
+                        `?start_time=${startTime}&duration=${duration}&fps=${fps}`;
 
-        // Передаем параметры в запрос
-        const url = "{% url 'create_frame_sequence' 'video_id' %}".replace('video_id', videoId) +
-            `?start_time=${startTime}&duration=${duration}&fps=${fps}`;
-
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                return response.json();
-            }
-        })
-        .then(data => {
-            if (data.error) {
-                console.error(data.error);
-                // Здесь можно отобразить сообщение об ошибке на странице
-            }
-        })
-        .catch(error => console.error('Error:', error));
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else {
+                            return response.json();
+                        }
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            console.error(data.error);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

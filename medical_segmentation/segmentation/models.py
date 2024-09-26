@@ -33,29 +33,30 @@ class ImageUpload(models.Model):
 
 
 class Video(models.Model):
-    title = models.CharField(max_length=255, verbose_name="Название видео")
-    description = models.TextField(blank=True, verbose_name="Описание видео")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    video_file = models.FileField(upload_to='videos/', unique=True, verbose_name="Файл видео")
+    title = models.CharField(max_length=255, verbose_name=_("Video title"))
+    description = models.TextField(blank=True, verbose_name=_("Video description"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    video_file = models.FileField(upload_to='videos/', unique=True, verbose_name=_("Video file"))
 
     def __str__(self):
         return f" Видео ({self.id}) {self.title}"
 
 
 class FrameSequence(models.Model):
-    video = models.ForeignKey(Video, related_name='frame_sequences', on_delete=models.CASCADE, verbose_name="Видео")
-    frame_file = models.ImageField(upload_to='frames/', verbose_name="Кадр")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    features = models.CharField(max_length=255, verbose_name=_("Frames features")),
+    video = models.ForeignKey(Video, related_name='frame_sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
+    frame_file = models.ImageField(upload_to='frames/', verbose_name=_("Frame"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     def __str__(self):
         return f"Кадр из {self.video.title} ({self.id})"
 
 
 class Mask(models.Model):
-    frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name="Кадр")
-    mask_file = models.ImageField(upload_to='masks/', verbose_name="Файл маски")
-    tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name="Ярлык")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
+    mask_file = models.ImageField(upload_to='masks/', verbose_name=_("Mask file"))
+    tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tagк"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     def __str__(self):
         return f"Маска для кадра {self.frame_sequence.id} ({self.tag})"
