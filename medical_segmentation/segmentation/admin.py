@@ -20,7 +20,7 @@ class ImageUploadAdmin(admin.ModelAdmin):
 
 @admin.register(FrameSequence)
 class FrameSequenceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'video', 'frame_file')
+    list_display = ('id', 'features','video', 'frame_file')
     search_fields = ('video',)    
 
 @admin.register(Mask)
