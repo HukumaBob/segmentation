@@ -19,7 +19,7 @@
         </div>
 
         <div class="col-12 col-md-6 mb-4">
-            <div class="card mt-4 h-100" id="videoPreview">
+            <div class="card mt-4 h-100" id="videoPreview" style="display: none;">
                 <div class="card-body">
                     <h2 id="previewTitle">{% trans "Video Preview" %}</h2>
                     <div id="conversionStatus">
@@ -38,13 +38,13 @@
             <div class="card mt-4 h-100" id="frameParameters" style="display: none;">
                 <div class="card-body">
                     <h3>{% trans "Frame Extraction Parameters" %}</h3>
-                    <div class="row mb-3"> <!-- Вторая строка -->
+                    <div class="row mb-3"> <!-- Параметры для извлечения кадров -->
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="sequenceName">{% trans "Sequence Name:" %}</label>
                                 <input type="text" id="sequenceName" class="form-control" placeholder="{% trans "Enter Sequence Name" %}">
                             </div>
-                        </div>                        
+                        </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="startTime">{% trans "Start Time (s):" %}</label>
@@ -63,7 +63,6 @@
                                 <input type="number" id="fps" class="form-control" value="10" step="1" min="1">
                             </div>
                         </div>
-
                     </div>
                     <div class="row mb-3"> <!-- Третья строка -->
                         <div class="col-md-3">
@@ -90,12 +89,31 @@
                                 <input type="number" id="bottomCrop" class="form-control" value="0" step="1" min="0">
                             </div>
                         </div>
-                    </div>
-                    <button id="createFramesButton" class="btn btn-success btn-block" style="margin-top: 15px; display: none;">{% trans "Create Frame Sequence" %}</button>
+                    <input type="hidden" id="createFrameSequenceUrl" value="{% url 'create_frame_sequence' 0 %}">
+
+                    <button id="createFramesButton" class="btn btn-success btn-block mt-3" style="display: none;">{% trans "Create Frame Sequence" %}</button>
                 </div>
             </div>
         </div>
-        
+        <div class="col-12 col-md-6 mb-4">
+            <div class="card mt-4 h-100" id="sequencesList" style="display: none;">
+                <div class="card-body">
+                    <h3>{% trans "Frame Sequences" %}</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans "ID" %}</th>
+                                <th>{% trans "Features" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sequenceTableBody">
+                            <!-- Динамически обновляемое тело таблицы -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -103,25 +121,23 @@
         const videoUploadForm = document.getElementById('videoUploadForm');
         const conversionStatus = document.getElementById('conversionStatus');
         const progressBar = document.getElementById('progressBar');
-        const videoPreview = document.getElementById('videoPlayer');
         const videoPlayer = document.getElementById('videoPlayer');
         const deleteButton = document.getElementById('deleteButton');
         const frameParameters = document.getElementById('frameParameters');
         const createFramesButton = document.getElementById('createFramesButton');
         const previewTitle = document.getElementById('previewTitle');
+        const videoPreview = document.getElementById('videoPreview');
+        const sequenceTableBody = document.getElementById('sequenceTableBody');
+        const sequencesList = document.getElementById('sequencesList');    
+        const baseCreateFrameSequenceUrl = document.getElementById('createFrameSequenceUrl').value;  // Получаем базовый URL    
 
         if (videoUploadForm) {
             videoUploadForm.addEventListener('submit', function(event) {
                 event.preventDefault();
-                
+
                 const formData = new FormData(this);
-                // Показываем статус конвертации
-                if (conversionStatus) {
-                    conversionStatus.style.display = 'block';
-                }
-                if (progressBar) {
-                    progressBar.style.width = '0%';
-                }
+                if (conversionStatus) conversionStatus.style.display = 'block';
+                if (progressBar) progressBar.style.width = '0%';
 
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', "{% url 'upload_video' %}", true);
@@ -137,24 +153,19 @@
                 xhr.onload = function() {
                     if (xhr.status === 200) {
                         const data = JSON.parse(xhr.responseText);
-                        // Обновляем карточку с предпросмотром видео
-                        if (conversionStatus) {
-                            conversionStatus.style.display = 'none'; // Скрываем статус конвертации
-                            previewTitle.textContent = '{% trans "Video Preview" %}'; // Устанавливаем заголовок предпросмотра
-                            videoPlayer.src = data.file_url; // Устанавливаем источник видео
-                            videoPlayer.style.display = 'block'; // Показываем видео
-                        }
-                        if (deleteButton) {
-                            deleteButton.dataset.fileUrl = data.file_url; // Устанавливаем ссылку для удаления
-                            deleteButton.style.display = 'block'; // Показываем кнопку удаления
-                        }
-                        if (createFramesButton) {
+                        if (conversionStatus) conversionStatus.style.display = 'none';
+                        if (data.file_url && videoPlayer && deleteButton && frameParameters) {
+                            videoPlayer.src = data.file_url;
+                            videoPlayer.style.display = 'block';
+                            videoPreview.style.display = 'block'; // Показать карточку видео
+                            deleteButton.style.display = 'block';
+                            deleteButton.dataset.fileUrl = data.file_url;
+                            frameParameters.style.display = 'block'; // Показать карточку параметров
                             createFramesButton.style.display = 'block';
                             createFramesButton.dataset.videoId = data.video_id;
                         }
-                        if (frameParameters) {
-                            frameParameters.style.display = 'block';
-                        }
+                    } else {
+                        console.error('Upload failed:', xhr.responseText);
                     }
                 };
 
@@ -162,39 +173,10 @@
             });
         }
 
-        if (deleteButton) {
-            deleteButton.addEventListener('click', function() {
-                const fileUrl = this.dataset.fileUrl;
-                if (fileUrl) {
-                    fetch("{% url 'delete_video' %}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: `file_url=${encodeURIComponent(fileUrl)}`
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            if (videoPlayer) {
-                                videoPlayer.style.display = 'none';
-                                videoPlayer.src = '';
-                            }
-                            if (deleteButton) deleteButton.style.display = 'none';
-                        } else {
-                            console.error('Error deleting file:', data.error);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                }
-            });
-        }
-
         if (createFramesButton) {
             createFramesButton.addEventListener('click', function() {
                 const videoId = this.dataset.videoId;
-                const sequenceName = document.getElementById('sequenceName').value; // Получаем значение Sequence Name
+                const sequenceName = document.getElementById('sequenceName').value;
                 const startTime = document.getElementById('startTime').value;
                 const duration = document.getElementById('duration').value;
                 const fps = document.getElementById('fps').value;
@@ -202,35 +184,50 @@
                 const rightCrop = document.getElementById('rightCrop').value;
                 const topCrop = document.getElementById('topCrop').value;
                 const bottomCrop = document.getElementById('bottomCrop').value;
-        
-                if (videoId) {
-                    const url = "{% url 'create_frame_sequence' 'video_id' %}".replace('video_id', videoId) +
-                        `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
-                        `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
-        
-                    fetch(url, {
+                const sequenceTableBody = document.getElementById('sequenceTableBody');
+                const sequencesList = document.getElementById('sequencesList');    
+                const baseCreateFrameSequenceUrl = document
+    
+                if (videoId && sequenceName) {
+                    // Заменяем `0` в шаблоне на текущий `videoId`
+                    const createUrl = `{% url 'create_frame_sequence' video_id=0 %}`.replace(0, videoId) +
+                    `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
+                    `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
+                
+                    fetch(createUrl, {
                         method: 'GET',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
                         }
                     })
-                    .then(response => {
-                        if (response.redirected) {
-                            window.location.href = response.url;
-                        } else {
-                            return response.json();
-                        }
-                    })
+                    .then(response => response.json())
                     .then(data => {
-                        if (data.error) {
-                            console.error(data.error);
+                        if (data.status === 'success') {
+                            alert("Frame sequence created successfully.");
+                            updateSequenceTable(data.sequences);
+                        } else {
+                            console.error('Error:', data.error);
                         }
                     })
                     .catch(error => console.error('Error:', error));
+                } else {
+                    alert("Please provide a sequence name.");
                 }
             });
         }
-        
+    
+        // Функция для обновления таблицы последовательностей
+        function updateSequenceTable(sequences) {
+            sequenceTableBody.innerHTML = '';  // Очистка текущей таблицы
+    
+            sequences.forEach(seq => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${seq.id}</td><td>${seq.features}</td>`;
+                sequenceTableBody.appendChild(row);
+            });
+    
+            sequencesList.style.display = 'block';  // Показать таблицу последовательностей
+        }
     });
 </script>
 {% endblock %}

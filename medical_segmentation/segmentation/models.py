@@ -42,14 +42,21 @@ class Video(models.Model):
         return f" Видео ({self.id}) {self.title}"
 
 
-class FrameSequence(models.Model):
+class Sequences(models.Model):
+    video = models.ForeignKey(Video, related_name='sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
     features = models.CharField(max_length=255, verbose_name=_("Frames features"))
-    video = models.ForeignKey(Video, related_name='frame_sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
+    
+    def __str__(self):
+        return f"Последовательность кадров {self.features}"    
+
+
+class FrameSequence(models.Model):
+    sequences = models.ForeignKey(Sequences, related_name='frame_sequences', on_delete=models.CASCADE, verbose_name=_("Sequences"))
     frame_file = models.ImageField(upload_to='frames/', verbose_name=_("Frame"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     def __str__(self):
-        return f"Кадр из {self.video.title} ({self.id})"
+        return f"Кадр из последовательности {self.sequences.features} (id:{self.id})"
 
 
 class Mask(models.Model):

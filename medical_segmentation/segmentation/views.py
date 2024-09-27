@@ -2,10 +2,12 @@ import uuid
 import os
 from django.shortcuts import get_object_or_404, render, redirect
 from django.conf import settings
-from .forms import MultipleImageUploadForm, VideoForm
-from .models import FrameSequence, ImageUpload, Video
+from .forms import MultipleImageUploadForm, SequenceForm, VideoForm
+from .models import FrameSequence, ImageUpload, Video, Sequences
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
 from django.http import JsonResponse
+import logging
+logger = logging.getLogger(__name__)
 
 def image_list(request):
     if request.method == 'POST':
@@ -109,24 +111,22 @@ def delete_video(request):
     return JsonResponse({'status': 'failed'})
 
 def create_frame_sequence(request, video_id):
-    # Получаем объект Video по уникальному идентификатору
+    logger.info(f"Create frame sequence called for video: {video_id}")
     video = get_object_or_404(Video, id=video_id)
 
-    # Получаем параметры из запроса, включая Sequence Name
-    sequence_name = request.GET.get('sequence_name', 'Default Sequence Name')  # Используем значение по умолчанию
-    start_time = request.GET.get('start_time', 0)
-    duration = request.GET.get('duration', 10)
-    fps = request.GET.get('fps', 10)
-    left_crop = request.GET.get('left_crop', 0)
-    right_crop = request.GET.get('right_crop', 0)
-    top_crop = request.GET.get('top_crop', 0)
-    bottom_crop = request.GET.get('bottom_crop', 0)
+    # Получаем параметры из запроса
+    sequence_name = request.GET.get('sequence_name', 'Default Sequence Name')
+    start_time = float(request.GET.get('start_time', 0))
+    duration = float(request.GET.get('duration', 10))
+    fps = int(request.GET.get('fps', 10))
+    left_crop = int(request.GET.get('left_crop', 0))
+    right_crop = int(request.GET.get('right_crop', 0))
+    top_crop = int(request.GET.get('top_crop', 0))
+    bottom_crop = int(request.GET.get('bottom_crop', 0))
 
-    # Указываем путь к файлу видео и выходной директории для кадров
-    video_path = os.path.join(settings.MEDIA_ROOT, video.video_file.name)  # Используем имя файла из объекта
+    video_path = os.path.join(settings.MEDIA_ROOT, video.video_file.name)
     output_folder = os.path.join(settings.MEDIA_ROOT, 'frames', os.path.splitext(os.path.basename(video.video_file.name))[0])
 
-    # Извлекаем кадры из видео и получаем список файлов
     extracted_frames = extract_frames_from_video(
         video_path, start_time=start_time, duration=duration, 
         fps=fps, output_folder=output_folder,
@@ -136,24 +136,40 @@ def create_frame_sequence(request, video_id):
     if not extracted_frames:
         return JsonResponse({'error': 'No frames were extracted'})
 
-    # Сохраняем каждый кадр как объект FrameSequence с учетом sequence_name
+    # Создаем или получаем существующий объект Sequences
+    sequence, created = Sequences.objects.get_or_create(
+        video=video,
+        features=sequence_name
+    )
+
+    # Сохраняем каждый кадр как объект FrameSequence
     for frame_path in extracted_frames:
-        frame_str_path = str(frame_path)  # Приведение PosixPath к строке
+        frame_str_path = str(frame_path)
         FrameSequence.objects.create(
-            features=sequence_name,  # Сохраняем имя последовательности
-            video=video,
+            sequences=sequence,
             frame_file=frame_str_path
         )
 
-    return redirect('frame_list', video_id=video.id)
+    # Подготовка данных для обновления списка последовательностей на клиенте
+    sequences = [
+        {'id': seq.id, 'features': seq.features}
+        for seq in video.sequences.all()
+    ]
+
+    # Возвращаем обновленные данные о последовательностях и статус успеха
+    return JsonResponse({'status': 'success', 'sequences': sequences})
 
 
 
 def frame_list(request, video_id):
+    # Получаем объект Video по его ID
     video = get_object_or_404(Video, id=video_id)
-    frames = video.frame_sequences.all()  # Получаем связанные кадры
+    
+    # Получаем все связанные последовательности для данного видео
+    sequences = video.sequences.all()  # Связь Video -> Sequences
+    
+    # Получаем все кадры, связанные с этими последовательностями
+    frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
 
-    # Создаем список URL для всех кадров
-    frame_urls = [frame.frame_file.url for frame in frames]
-
-    return render(request, 'segmentation/frame_list.html', {'frames': frame_urls})
+    context = {'video': video, 'frames': frames}
+    return render(request, 'segmentation/frame_list.html', context)

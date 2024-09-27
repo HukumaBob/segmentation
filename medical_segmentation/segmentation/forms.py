@@ -1,5 +1,5 @@
 from django import forms
-from .models import ObjectClass, Video
+from .models import ObjectClass, Sequences, Video
 from django.utils.translation import gettext_lazy as _
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -28,4 +28,9 @@ class MultipleImageUploadForm(forms.Form):
 class VideoForm(forms.ModelForm):
     class Meta:
         model = Video
-        fields = ['title', 'description', 'video_file']
+        fields = ['id', 'title', 'description', 'video_file']
+
+class SequenceForm(forms.ModelForm):
+    class Meta:
+        model = Sequences
+        fields = ['video', 'features']  # Поля для формы        
