@@ -21,7 +21,17 @@ class ImageUploadAdmin(admin.ModelAdmin):
 
 @admin.register(Sequences)
 class SequencesAdmin(admin.ModelAdmin):
-    list_display = ('id', 'video', 'features')
+    list_display = ('id', 
+                    'video',
+                    'features', 
+                    'start_time',
+                    'duration',
+                    'fps',
+                    'left_crop',
+                    'right_crop',
+                    'top_crop',
+                    'bottom_crop'
+                    )
     search_fields = ('video',)    
 
 

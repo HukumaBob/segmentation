@@ -116,6 +116,10 @@
                         <tr>
                             <th>{% trans "ID" %}</th>
                             <th>{% trans "Features" %}</th>
+                            <th>{% trans "Start time" %}</th>
+                            <th>{% trans "Duration" %}</th>
+                            <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="sequenceTableBody">
@@ -141,9 +145,6 @@
         const createFramesButton = document.getElementById('createFramesButton');
         const previewTitle = document.getElementById('previewTitle');
         const videoPreview = document.getElementById('videoPreview');
-        const sequenceTableBody = document.getElementById('sequenceTableBody');
-        const sequencesList = document.getElementById('sequencesList');    
-        const baseCreateFrameSequenceUrl = document.getElementById('createFrameSequenceUrl').value;  // Получаем базовый URL    
 
         if (videoUploadForm) {
             videoUploadForm.addEventListener('submit', function(event) {
@@ -236,7 +237,7 @@
     
             sequences.forEach(seq => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${seq.id}</td><td>${seq.features}</td>`;
+                row.innerHTML = `<td>${seq.id}</td><td>${seq.features}</td><td>${seq.start_time}</td><td>${seq.duration}</td><td>"Удалить последовательность"</td><td>"Редактировать"</td>`;
                 sequenceTableBody.appendChild(row);
             });
     
