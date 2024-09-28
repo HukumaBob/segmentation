@@ -130,7 +130,8 @@ def create_frame_sequence(request, video_id):
     extracted_frames = extract_frames_from_video(
         video_path, start_time=start_time, duration=duration, 
         fps=fps, output_folder=output_folder,
-        left_crop=left_crop, right_crop=right_crop, top_crop=top_crop, bottom_crop=bottom_crop
+        left_crop=left_crop, right_crop=right_crop,
+        top_crop=top_crop, bottom_crop=bottom_crop
     )
 
     if not extracted_frames:
@@ -139,7 +140,14 @@ def create_frame_sequence(request, video_id):
     # Создаем или получаем существующий объект Sequences
     sequence, created = Sequences.objects.get_or_create(
         video=video,
-        features=sequence_name
+        features=sequence_name,
+        start_time=start_time,
+        duration=duration,
+        fps=fps,
+        left_crop=left_crop,
+        right_crop=right_crop,
+        top_crop=top_crop,
+        bottom_crop=bottom_crop
     )
 
     # Сохраняем каждый кадр как объект FrameSequence
@@ -152,7 +160,7 @@ def create_frame_sequence(request, video_id):
 
     # Подготовка данных для обновления списка последовательностей на клиенте
     sequences = [
-        {'id': seq.id, 'features': seq.features}
+        {'id': seq.id, 'features': seq.features, 'start_time':seq.start_time, 'duration':seq.duration}
         for seq in video.sequences.all()
     ]
 
@@ -161,15 +169,15 @@ def create_frame_sequence(request, video_id):
 
 
 
-def frame_list(request, video_id):
-    # Получаем объект Video по его ID
-    video = get_object_or_404(Video, id=video_id)
+# def frame_list(request, video_id):
+#     # Получаем объект Video по его ID
+#     video = get_object_or_404(Video, id=video_id)
     
-    # Получаем все связанные последовательности для данного видео
-    sequences = video.sequences.all()  # Связь Video -> Sequences
+#     # Получаем все связанные последовательности для данного видео
+#     sequences = video.sequences.all()  # Связь Video -> Sequences
     
-    # Получаем все кадры, связанные с этими последовательностями
-    frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
+#     # Получаем все кадры, связанные с этими последовательностями
+#     frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
 
-    context = {'video': video, 'frames': frames}
-    return render(request, 'segmentation/frame_list.html', context)
+#     context = {'video': video, 'frames': frames}
+#     return render(request, 'segmentation/frame_list.html', context)

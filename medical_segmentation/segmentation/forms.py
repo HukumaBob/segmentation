@@ -33,4 +33,14 @@ class VideoForm(forms.ModelForm):
 class SequenceForm(forms.ModelForm):
     class Meta:
         model = Sequences
-        fields = ['video', 'features']  # Поля для формы        
+        fields = ['id', 
+                    'video',
+                    'features', 
+                    'start_time',
+                    'duration',
+                    'fps',
+                    'left_crop',
+                    'right_crop',
+                    'top_crop',
+                    'bottom_crop'
+                    ]

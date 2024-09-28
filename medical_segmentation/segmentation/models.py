@@ -45,7 +45,14 @@ class Video(models.Model):
 class Sequences(models.Model):
     video = models.ForeignKey(Video, related_name='sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
     features = models.CharField(max_length=255, verbose_name=_("Frames features"))
-    
+    start_time = models.IntegerField(null=False, default=0, verbose_name=_("Start time"))
+    duration = models.IntegerField(null=False, default=0, verbose_name=_("Duration of sequence"))
+    fps = models.IntegerField(null=False, default=1, verbose_name=_("FPS"))
+    left_crop = models.IntegerField(null=False, default=0, verbose_name=_("Left crop"))
+    right_crop = models.IntegerField(null=False, default=0, verbose_name=_("Right crop"))
+    top_crop = models.IntegerField(null=False, default=0, verbose_name=_("Top crop"))
+    bottom_crop = models.IntegerField(null=False, default=0, verbose_name=_("Bottom crop"))
+
     def __str__(self):
         return f"Последовательность кадров {self.features}"    
 
