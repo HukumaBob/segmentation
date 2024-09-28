@@ -169,15 +169,15 @@ def create_frame_sequence(request, video_id):
 
 
 
-# def frame_list(request, video_id):
-#     # Получаем объект Video по его ID
-#     video = get_object_or_404(Video, id=video_id)
+def frame_list(request, video_id):
+    # Получаем объект Video по его ID
+    video = get_object_or_404(Video, id=video_id)
     
-#     # Получаем все связанные последовательности для данного видео
-#     sequences = video.sequences.all()  # Связь Video -> Sequences
+    # Получаем все связанные последовательности для данного видео
+    sequences = video.sequences.all()  # Связь Video -> Sequences
     
-#     # Получаем все кадры, связанные с этими последовательностями
-#     frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
+    # Получаем все кадры, связанные с этими последовательностями
+    frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
 
-#     context = {'video': video, 'frames': frames}
-#     return render(request, 'segmentation/frame_list.html', context)
+    context = {'video': video, 'frames': frames}
+    return render(request, 'segmentation/frame_list.html', context)
