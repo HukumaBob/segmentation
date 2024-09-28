@@ -243,6 +243,64 @@
     
             sequencesList.style.display = 'block';  // Показать таблицу последовательностей
         }
+        function updateSequenceTable(sequences) {
+            sequenceTableBody.innerHTML = '';  // Очистка текущей таблицы
+        
+            sequences.forEach(seq => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${seq.id}</td>
+                    <td>${seq.features}</td>
+                    <td>${seq.start_time}</td>
+                    <td>${seq.duration}</td>
+                    <td><button class="btn btn-danger delete-sequence" data-seq-id="${seq.id}">{% trans "Delete" %}</button></td>
+                    <td><button class="btn btn-primary edit-sequence" data-seq-id="${seq.id}">{% trans "Edit" %}</button></td>
+                `;
+                sequenceTableBody.appendChild(row);
+            });
+        
+            sequencesList.style.display = 'block';  // Показать таблицу последовательностей
+        
+            // Добавляем обработчики для кнопок удаления и редактирования
+            const deleteButtons = document.querySelectorAll('.delete-sequence');
+            const editButtons = document.querySelectorAll('.edit-sequence');
+        
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const sequenceId = this.dataset.seqId;
+                    if (confirm("{% trans 'Are you sure you want to delete this sequence?' %}")) {
+                        deleteSequence(sequenceId);
+                    }
+                });
+            });
+        
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const sequenceId = this.dataset.seqId;
+                    window.location.href = `/en/sequence/${sequenceId}/edit/`;
+                });
+            });
+        }
+        function deleteSequence(sequenceId) {
+            fetch(`{% url 'delete_sequence' sequence_id=0 %}`.replace(0, sequenceId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("{% trans 'Sequence deleted successfully.' %}");
+                    // Обновляем таблицу последовательностей после удаления
+                    updateSequenceTable(data.sequences);
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+                
     });
 </script>
 {% endblock %}

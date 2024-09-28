@@ -63,7 +63,7 @@ class FrameSequence(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     def __str__(self):
-        return f"Кадр из последовательности {self.sequences.features} (id:{self.id})"
+        return f"Кадр из последовательности {self.sequences.id} (id:{self.id})"
 
 
 class Mask(models.Model):

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+{% load i18n %}
+<div class="container-fluid">
+    <h2>{% trans "Edit Frame Sequence" %} - {{ sequence.features }}</h2>
+    <div class="row">
+        {% for frame in frames %}
+            <div class="col-3 mb-4">
+                <div class="card">
+                    <a href="{{ frame.frame_file.url }}" target="_blank">
+                        <img src="{{ frame.frame_file.url }}" class="card-img-top" alt="{% trans 'Frame Image' %}">
+                    </a>
+                    <div class="card-body">
+                        <p class="card-text">{{ frame.frame_file.name }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <!-- Обновленная ссылка с использованием video.id -->
+    {% comment %} <a href="{% url 'video_detail' video.id %}" class="btn btn-secondary">{% trans "Back to Video" %}</a> {% endcomment %}
+</div>
+{% endblock %}
