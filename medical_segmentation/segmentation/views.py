@@ -168,12 +168,24 @@ def create_frame_sequence(request, video_id):
     # Возвращаем обновленные данные о последовательностях и статус успеха
     return JsonResponse({'status': 'success', 'sequences': sequences})
 
+import os
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
+from .models import Sequences, FrameSequence
+
 @require_POST
 def delete_sequence(request, sequence_id):
     try:
+        # Находим последовательность
         sequence = get_object_or_404(Sequences, id=sequence_id)
         video = sequence.video
-        sequence.delete()  # Удаляем последовательность из базы данных
+
+        # Удаляем связанные кадры с диска
+        delete_frames_from_disk(sequence)
+
+        # Удаляем последовательность из базы данных
+        sequence.delete()
 
         # Возвращаем обновленные последовательности для данного видео
         sequences = [
@@ -183,6 +195,25 @@ def delete_sequence(request, sequence_id):
         return JsonResponse({'status': 'success', 'sequences': sequences})
     except Exception as e:
         return JsonResponse({'status': 'failed', 'error': str(e)})
+
+def delete_frames_from_disk(sequence):
+    """
+    Удаляет все файлы кадров, связанные с данной последовательностью, с диска.
+    """
+    # Находим все кадры, связанные с данной последовательностью
+    frames = FrameSequence.objects.filter(sequences=sequence)
+
+    # Проходим по каждому кадру и удаляем файл с диска
+    for frame in frames:
+        if frame.frame_file and os.path.isfile(frame.frame_file.path):
+            try:
+                os.remove(frame.frame_file.path)
+                print(f"Удален файл: {frame.frame_file.path}")
+            except Exception as e:
+                print(f"Ошибка при удалении файла {frame.frame_file.path}: {e}")
+                
+    # Удаляем все объекты FrameSequence для данной последовательности
+    frames.delete()
 
 
 def edit_sequence(request, sequence_id):
