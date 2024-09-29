@@ -56,42 +56,21 @@ def upload_video(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
         if form.is_valid():
-            video_instance = form.save(commit=False)
-            video_file = request.FILES['video_file']
-            video_filename = video_file.name
+            video_instance = form.save()
+            video_filename = video_instance.video_file.name
 
-            # Сохраняем исходное видео
-            video_instance.video_file = video_file
-            video_instance.save()
-
-            video_path = os.path.join(settings.MEDIA_ROOT, 'videos', video_filename)
+            video_path = os.path.join(settings.MEDIA_ROOT, video_filename)
             os.makedirs(os.path.dirname(video_path), exist_ok=True)
 
-            # Обрабатываем видео
-            if not video_filename.endswith('.webm'):
-                # Конвертируем в webm
-                output_path = convert_to_webm(video_path, os.path.dirname(video_path))
-                
-                # Удаляем исходный файл, если конвертация прошла успешно
-                if os.path.exists(video_path):
-                    os.remove(video_path)
-            else:
-                output_path = video_path
-
-            # Сохраняем видео в новом формате
-            saved_output_path = save_webm(output_path, os.path.dirname(output_path))
-            
-            # Обновляем путь к конвертированному видео в модели
-            video_instance.video_file.name = os.path.join('videos', os.path.basename(saved_output_path))
-            video_instance.save()
-
+            # Дополнительные шаги обработки видео
             # Возвращаем URL видео для предпросмотра
-            output_url = os.path.join(settings.MEDIA_URL, 'videos', os.path.basename(saved_output_path))
+            output_url = video_instance.video_file.url
             return JsonResponse({'file_url': output_url, 'video_id': video_instance.id})
         else:
             return JsonResponse({'error': 'Invalid form'}, status=400)
 
-    return render(request, 'segmentation/upload_video.html', {'form': VideoForm()})
+    videos = Video.objects.all()
+    return render(request, 'segmentation/upload_video.html', {'form': VideoForm(), 'videos': videos})
 
 
 def delete_video(request):
