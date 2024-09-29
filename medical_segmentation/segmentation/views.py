@@ -166,12 +166,6 @@ def create_frame_sequence(request, video_id):
     # Возвращаем обновленные данные о последовательностях и статус успеха
     return JsonResponse({'status': 'success', 'sequences': sequences})
 
-import os
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
-from .models import Sequences, FrameSequence
-
 @require_POST
 def delete_sequence(request, sequence_id):
     try:
@@ -213,35 +207,3 @@ def delete_frames_from_disk(sequence):
     # Удаляем все объекты FrameSequence для данной последовательности
     frames.delete()
 
-
-def edit_sequence(request, sequence_id):
-    # Получаем последовательность по её ID
-    sequence = get_object_or_404(Sequences, id=sequence_id)
-
-    # Получаем все кадры, связанные с этой последовательностью
-    frames = FrameSequence.objects.filter(sequences=sequence)
-
-    # Получаем видео, связанное с этой последовательностью
-    video = sequence.video
-
-    # Передаем в шаблон саму последовательность, список кадров и объект видео
-    context = {
-        'sequence': sequence,
-        'frames': frames,
-        'video': video,
-    }
-    return render(request, 'segmentation/edit_sequence.html', context)
-
-
-# def frame_list(request, video_id):
-#     # Получаем объект Video по его ID
-#     video = get_object_or_404(Video, id=video_id)
-    
-#     # Получаем все связанные последовательности для данного видео
-#     sequences = video.sequences.all()  # Связь Video -> Sequences
-    
-#     # Получаем все кадры, связанные с этими последовательностями
-#     frames = FrameSequence.objects.filter(sequences__in=sequences)  # Связь Sequences -> FrameSequence
-
-#     context = {'video': video, 'frames': frames}
-#     return render(request, 'segmentation/frame_list.html', context)
