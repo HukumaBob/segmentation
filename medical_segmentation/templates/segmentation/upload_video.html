@@ -179,51 +179,85 @@
         const progressBar = document.getElementById('progressBar');
         const videoPlayer = document.getElementById('videoPlayer');
         const deleteButton = document.getElementById('deleteButton');
-
+        const createFramesButton = document.getElementById('createFramesButton');
+        const videoPreview = document.getElementById('videoPreview');
+        const frameParameters = document.getElementById('frameParameters');
+        const sequenceTableBody = document.getElementById('sequenceTableBody');
+        const sequencesList = document.getElementById('sequencesList');
+    
+        // Карточка параметров должна быть доступна всегда при наличии видео
+        function showFrameParameters(videoId) {
+            if (videoId) {
+                frameParameters.style.display = 'block';
+                createFramesButton.style.display = 'block';
+                createFramesButton.dataset.videoId = videoId;
+            }
+        }
+    
+        // Функция для показа предпросмотра видео
+        function previewVideo(videoUrl, videoId) {
+            if (videoUrl && videoPlayer && videoPreview) {
+                videoPlayer.src = videoUrl;
+                videoPlayer.style.display = 'block';
+                videoPreview.style.display = 'block';  // Показать карточку предпросмотра
+                deleteButton.style.display = 'block';
+                deleteButton.dataset.fileUrl = videoUrl;
+                showFrameParameters(videoId);  // Показать параметры извлечения кадров
+            }
+        }
+    
+        // Обработчик загрузки видео
         if (videoUploadForm) {
-            videoUploadForm.addEventListener('submit', function(event) {
+            videoUploadForm.addEventListener('submit', function (event) {
                 event.preventDefault();
-
+    
                 const formData = new FormData(this);
                 if (conversionStatus) conversionStatus.style.display = 'block';
                 if (progressBar) progressBar.style.width = '0%';
-
+    
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', "{% url 'upload_video' %}", true);
                 xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-
-                xhr.upload.onprogress = function(event) {
+    
+                xhr.upload.onprogress = function (event) {
                     if (event.lengthComputable && progressBar) {
                         const percentComplete = (event.loaded / event.total) * 100;
                         progressBar.style.width = percentComplete + '%';
                     }
                 };
-
-                xhr.onload = function() {
+    
+                xhr.onload = function () {
                     if (xhr.status === 200) {
                         const data = JSON.parse(xhr.responseText);
                         if (conversionStatus) conversionStatus.style.display = 'none';
-                        if (data.file_url && videoPlayer && deleteButton && frameParameters) {
-                            videoPlayer.src = data.file_url;
-                            videoPlayer.style.display = 'block';
-                            videoPreview.style.display = 'block'; // Показать карточку видео
-                            deleteButton.style.display = 'block';
-                            deleteButton.dataset.fileUrl = data.file_url;
-                            frameParameters.style.display = 'block'; // Показать карточку параметров
-                            createFramesButton.style.display = 'block';
-                            createFramesButton.dataset.videoId = data.video_id;
+                        if (data.file_url && videoPlayer && deleteButton) {
+                            previewVideo(data.file_url, data.video_id);
                         }
                     } else {
                         console.error('Upload failed:', xhr.responseText);
                     }
                 };
-
+    
                 xhr.send(formData);
             });
         }
-
+    
+        // Обработчик выбора видео из таблицы
+        const videosTable = document.getElementById('videosTable');
+        if (videosTable) {
+            videosTable.addEventListener('click', function (event) {
+                const target = event.target.closest('tr');
+                if (target) {
+                    const videoUrl = target.dataset.url;
+                    const videoId = target.dataset.id;
+                    previewVideo(videoUrl, videoId);
+                }
+            });
+        }
+    
+        // Обработчик создания последовательности
         if (createFramesButton) {
-            createFramesButton.addEventListener('click', function() {
+            createFramesButton.addEventListener('click', function () {
                 const videoId = this.dataset.videoId;
                 const sequenceName = document.getElementById('sequenceName').value;
                 const startTime = document.getElementById('startTime').value;
@@ -233,53 +267,38 @@
                 const rightCrop = document.getElementById('rightCrop').value;
                 const topCrop = document.getElementById('topCrop').value;
                 const bottomCrop = document.getElementById('bottomCrop').value;
-                const sequenceTableBody = document.getElementById('sequenceTableBody');
-                const sequencesList = document.getElementById('sequencesList');    
-                const baseCreateFrameSequenceUrl = document
     
                 if (videoId && sequenceName) {
                     // Заменяем `0` в шаблоне на текущий `videoId`
                     const createUrl = `{% url 'create_frame_sequence' video_id=0 %}`.replace(0, videoId) +
-                    `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
-                    `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
-                
+                        `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
+                        `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
+    
                     fetch(createUrl, {
                         method: 'GET',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            {% comment %} alert("Frame sequence created successfully."); {% endcomment %}
-                            updateSequenceTable(data.sequences);
-                        } else {
-                            console.error('Error:', data.error);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                updateSequenceTable(data.sequences);
+                            } else {
+                                console.error('Error:', data.error);
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
                 } else {
                     alert("Please provide a sequence name.");
                 }
             });
         }
     
-        // Функция для обновления таблицы последовательностей
+        // Обновление таблицы последовательностей
         function updateSequenceTable(sequences) {
             sequenceTableBody.innerHTML = '';  // Очистка текущей таблицы
     
-            sequences.forEach(seq => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${seq.id}</td><td>${seq.features}</td><td>${seq.start_time}</td><td>${seq.duration}</td><td>"Удалить последовательность"</td><td>"Редактировать"</td>`;
-                sequenceTableBody.appendChild(row);
-            });
-    
-            sequencesList.style.display = 'block';  // Показать таблицу последовательностей
-        }
-        function updateSequenceTable(sequences) {
-            sequenceTableBody.innerHTML = '';  // Очистка текущей таблицы
-        
             sequences.forEach(seq => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -292,29 +311,34 @@
                 `;
                 sequenceTableBody.appendChild(row);
             });
-        
+    
             sequencesList.style.display = 'block';  // Показать таблицу последовательностей
-        
-            // Добавляем обработчики для кнопок удаления и редактирования
+            addSequenceEventListeners();  // Подключаем обработчики событий для кнопок удаления и редактирования
+        }
+    
+        // Обработчики событий для кнопок в таблице
+        function addSequenceEventListeners() {
             const deleteButtons = document.querySelectorAll('.delete-sequence');
             const editButtons = document.querySelectorAll('.edit-sequence');
-        
+    
             deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     const sequenceId = this.dataset.seqId;
                     if (confirm("{% trans 'Are you sure you want to delete this sequence?' %}")) {
                         deleteSequence(sequenceId);
                     }
                 });
             });
-        
+    
             editButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     const sequenceId = this.dataset.seqId;
                     window.location.href = `/en/sequence/${sequenceId}/edit/`;
                 });
             });
         }
+    
+        // Удаление последовательности
         function deleteSequence(sequenceId) {
             fetch(`{% url 'delete_sequence' sequence_id=0 %}`.replace(0, sequenceId), {
                 method: 'POST',
@@ -322,19 +346,18 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert("{% trans 'Sequence deleted successfully.' %}");
-                    // Обновляем таблицу последовательностей после удаления
-                    updateSequenceTable(data.sequences);
-                } else {
-                    console.error('Error:', data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert("{% trans 'Sequence deleted successfully.' %}");
+                        updateSequenceTable(data.sequences);
+                    } else {
+                        console.error('Error:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
         }
-                
     });
+    
 </script>
 {% endblock %}
