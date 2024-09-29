@@ -44,3 +44,13 @@ class SequenceForm(forms.ModelForm):
                     'top_crop',
                     'bottom_crop'
                     ]
+
+class VideoUploadForm(forms.ModelForm):
+    class Meta:
+        model = Video
+        fields = ['title', 'description', 'video_file']  # Включаем необходимые поля модели
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter video title'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter video description'}),
+            'video_file': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }

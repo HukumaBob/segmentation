@@ -5,16 +5,54 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <!-- Первая карточка для загрузки видео -->
+        <!-- Карточка для загрузки и выбора видео -->
         <div class="col-12 col-md-6 mb-4">
             <div class="card mt-4 h-100">
                 <div class="card-body">
-                    <h2 class="card-title">{% trans "Upload Video" %}</h2>
-                    <form id="videoUploadForm" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary btn-block">{% trans "Upload Video" %}</button>
-                    </form>
+                    <h2 class="card-title">{% trans "Select or Upload Video" %}</h2>
+                    <div class="row">
+                        <!-- Карточка для загрузки видео -->
+                        <div class="col-12 col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h3>{% trans "Upload Video" %}</h3>
+                                    <form id="videoUploadForm" method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        {{ form.as_p }}
+                                        <button type="submit" class="btn btn-primary btn-block">{% trans "Upload Video" %}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Карточка для выбора видео из базы данных -->
+                        <div class="col-12 col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h3>{% trans "Select Video from Database" %}</h3>
+                                    <div class="form-group">
+                                        <label>{% trans "Available Videos:" %}</label>
+                                        <table class="table table-striped" id="videosTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>{% trans "Title" %}</th>
+                                                    <th>{% trans "Created At" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for video in videos %}
+                                                    <tr data-id="{{ video.id }}" data-url="{{ video.video_file.url }}">
+                                                        <td>{{ video.title }}</td>
+                                                        <td>{{ video.created_at|date:"Y-m-d H:i" }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- Конец строки с двумя карточками -->
                 </div>
             </div>
         </div>
@@ -141,10 +179,6 @@
         const progressBar = document.getElementById('progressBar');
         const videoPlayer = document.getElementById('videoPlayer');
         const deleteButton = document.getElementById('deleteButton');
-        const frameParameters = document.getElementById('frameParameters');
-        const createFramesButton = document.getElementById('createFramesButton');
-        const previewTitle = document.getElementById('previewTitle');
-        const videoPreview = document.getElementById('videoPreview');
 
         if (videoUploadForm) {
             videoUploadForm.addEventListener('submit', function(event) {
