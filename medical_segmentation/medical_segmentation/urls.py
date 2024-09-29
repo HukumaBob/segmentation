@@ -8,9 +8,11 @@ urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
 ]
 
+# Подключение маршрутов для i18n
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
     path('', include('segmentation.urls')),
+    path('', include('data_preparation.urls')),  # Добавляем ваше приложение
 )
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

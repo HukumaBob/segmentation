@@ -6,8 +6,6 @@ urlpatterns = [
     path('upload-video/', views.upload_video, name='upload_video'),
     path('delete-video/', views.delete_video, name='delete_video'),
     path('create-frame-sequence/<str:video_id>/', views.create_frame_sequence, name='create_frame_sequence'),
-    # path('frame-list/<str:sequence_id>/', views.frame_list, name='frame_list'),
     path('sequence/<int:sequence_id>/delete/', views.delete_sequence, name='delete_sequence'),
-    path('sequence/<int:sequence_id>/edit/', views.edit_sequence, name='edit_sequence'),
     path('', views.image_list, name='image_list'),
 ]
