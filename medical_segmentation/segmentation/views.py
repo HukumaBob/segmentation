@@ -58,17 +58,36 @@ def upload_video(request):
         if form.is_valid():
             video_instance = form.save()
             video_filename = video_instance.video_file.name
-
             video_path = os.path.join(settings.MEDIA_ROOT, video_filename)
             os.makedirs(os.path.dirname(video_path), exist_ok=True)
 
-            # Дополнительные шаги обработки видео
+            # Проверяем, является ли видео в формате .webm
+            if not video_filename.endswith('.webm'):
+                # Конвертация в webm формат
+                output_path = convert_to_webm(video_path, os.path.dirname(video_path))
+                
+                # Удаляем исходный файл после успешной конвертации
+                if os.path.exists(output_path):
+                    os.remove(video_path)
+                else:
+                    return JsonResponse({'error': 'Conversion to webm failed'}, status=500)
+            else:
+                output_path = video_path
+
+            # Сохраняем webm видео в указанной директории
+            saved_output_path = save_webm(output_path, os.path.dirname(output_path))
+
+            # Обновляем путь к видеофайлу в записи модели
+            video_instance.video_file.name = os.path.join('videos', os.path.basename(saved_output_path))
+            video_instance.save()
+
             # Возвращаем URL видео для предпросмотра
             output_url = video_instance.video_file.url
             return JsonResponse({'file_url': output_url, 'video_id': video_instance.id})
         else:
             return JsonResponse({'error': 'Invalid form'}, status=400)
 
+    # Отображение страницы загрузки видео с формой
     videos = Video.objects.all()
     return render(request, 'segmentation/upload_video.html', {'form': VideoForm(), 'videos': videos})
 
