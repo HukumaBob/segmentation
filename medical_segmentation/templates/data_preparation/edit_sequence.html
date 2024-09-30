@@ -4,13 +4,14 @@
 {% load i18n %}
 <div class="container-fluid">
     <h2>{% trans "Edit Frame Sequence" %} - {{ sequence.features }}</h2>
-    <div class="row">
+    <div class="row" id="frame-container">
         {% for frame in frames %}
             <div class="col-3 mb-4">
-                <div class="card">
-                    <a href="{{ frame.frame_file.url }}" target="_blank">
-                        <img src="{{ frame.frame_file.url }}" class="card-img-top" alt="{% trans 'Frame Image' %}">
-                    </a>
+                <div class="card frame-card" data-frame-id="{{ frame.id }}" data-frame-name="{{ frame.frame_file.name }}" data-frame-url="{{ frame.frame_file.url }}">
+                    <input type="checkbox" class="delete-checkbox" id="checkbox-{{ frame.id }}" value="{{ frame.id }}">
+                    <div class="frame-wrapper">
+                        <img src="{{ frame.frame_file.url }}" class="card-img-top frame-img" alt="{% trans 'Frame Image' %}">
+                    </div>
                     <div class="card-body">
                         <p class="card-text">{{ frame.frame_file.name }}</p>
                     </div>
@@ -18,7 +19,129 @@
             </div>
         {% endfor %}
     </div>
-    <!-- Обновленная ссылка с использованием video.id -->
-    {% comment %} <a href="{% url 'video_detail' video.id %}" class="btn btn-secondary">{% trans "Back to Video" %}</a> {% endcomment %}
 </div>
+
+<!-- Модальное окно -->
+<div id="frameModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <div class="modal-image-wrapper">
+            <img id="modalImage" src="" alt="Frame Image" class="modal-image">
+            <canvas id="maskCanvas" class="mask-canvas"></canvas>
+        </div>
+        <div class="modal-info">
+            <h5 id="modalFileName"></h5>
+            <button id="deleteButton" class="btn btn-danger">{% trans 'Delete' %}</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .frame-card { position: relative; cursor: pointer; display: flex; flex-direction: column; height: 100%; }
+    .frame-wrapper { overflow: hidden; flex-grow: 1; }
+    .frame-card img { width: 100%; height: 100%; object-fit: cover; }
+    .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); }
+    .modal-content { position: relative; margin: 5% auto; width: 75%; height: 75%; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+    .modal-image-wrapper { width: 100%; height: 85%; display: flex; justify-content: center; align-items: center; background-color: #f7f7f7; position: relative; }
+    .modal-image { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 1; }
+    .mask-canvas { position: absolute; top: 0; left: 0; z-index: 2; width: 100%; height: 100%; }
+    .modal-info { text-align: center; margin-top: 10px; }
+    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 30px; color: #aaa; cursor: pointer; }
+    .close-btn:hover, .close-btn:focus { color: #000; }
+    .delete-checkbox { position: absolute; top: 10px; left: 10px; z-index: 105; transform: scale(1.5); cursor: pointer; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const frameCards = document.querySelectorAll('.frame-card');
+        const modal = document.getElementById('frameModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalFileName = document.getElementById('modalFileName');
+        const deleteButton = document.getElementById('deleteButton');
+        const closeButton = document.querySelector('.close-btn');
+        const maskCanvas = document.getElementById('maskCanvas');
+        const ctx = maskCanvas.getContext('2d');
+        let activeFrameId = null;
+
+        // Открытие модального окна
+        function showModal(frameId, frameUrl, frameName) {
+            modal.style.display = 'block';
+            modalImage.src = frameUrl;
+            modalFileName.textContent = frameName;
+            activeFrameId = frameId;
+
+            // Установка размеров canvas в соответствии с изображением
+            setTimeout(() => {
+                maskCanvas.width = modalImage.clientWidth;
+                maskCanvas.height = modalImage.clientHeight;
+                ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
+            }, 100);
+        }
+
+        // Закрытие модального окна
+        function closeModal() {
+            modal.style.display = 'none';
+            modalImage.src = '';
+            modalFileName.textContent = '';
+            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            activeFrameId = null;
+        }
+
+        // Добавление отладочного сообщения для canvas
+        maskCanvas.addEventListener('click', (event) => {
+            console.log('Canvas clicked!');  // Проверяем, срабатывает ли событие на canvas
+            const rect = maskCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            console.log(`Click coordinates on canvas: X=${x}, Y=${y}`);
+
+            if (activeFrameId) {
+                console.log(`Sending request for frame ID: ${activeFrameId}`);
+                fetch(`/generate_mask/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ frame_id: activeFrameId, point_x: x, point_y: y })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server response:', data);
+                    if (data.mask_url) {
+                        const img = new Image();
+                        img.src = data.mask_url;
+                        img.onload = () => {
+                            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                            ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
+                        };
+                    }
+                })
+                .catch(error => console.error('Error during fetch:', error));
+            }
+        });
+
+        frameCards.forEach(card => {
+            card.addEventListener('click', (event) => {
+                if (event.target.classList.contains('delete-checkbox')) return;
+
+                const frameId = card.dataset.frameId;
+                const frameUrl = card.dataset.frameUrl;
+                const frameName = card.dataset.frameName;
+
+                console.log(`Opening modal for frame ID: ${frameId}, URL: ${frameUrl}`);
+                showModal(frameId, frameUrl, frameName);
+                event.stopPropagation();
+            });
+        });
+
+        closeButton.addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    });
+</script>
 {% endblock %}
