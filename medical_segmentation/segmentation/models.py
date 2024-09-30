@@ -71,6 +71,9 @@ class Mask(models.Model):
     mask_file = models.ImageField(upload_to='masks/', verbose_name=_("Mask file"))
     tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tagк"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    point_x = models.IntegerField()
+    point_y = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Маска для кадра {self.frame_sequence.id} ({self.tag})"
