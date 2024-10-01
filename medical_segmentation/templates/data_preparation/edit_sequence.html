@@ -62,15 +62,15 @@
         const maskCanvas = document.getElementById('maskCanvas');
         const ctx = maskCanvas.getContext('2d');
         let activeFrameId = null;
-
+    
         // Открытие модального окна
         function showModal(frameId, frameUrl, frameName) {
             modal.style.display = 'block';
             modalImage.src = frameUrl;
             modalFileName.textContent = frameName;
             activeFrameId = frameId;
-
-            // Установка размеров canvas в соответствии с изображением
+    
+            // Устанавливаем размеры canvas в соответствии с изображением
             setTimeout(() => {
                 maskCanvas.width = modalImage.clientWidth;
                 maskCanvas.height = modalImage.clientHeight;
@@ -78,7 +78,7 @@
                 console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
             }, 100);
         }
-
+    
         // Закрытие модального окна
         function closeModal() {
             modal.style.display = 'none';
@@ -87,26 +87,46 @@
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
             activeFrameId = null;
         }
-
-        // Добавление отладочного сообщения для canvas
+    
+        // Обработчик клика по canvas
         maskCanvas.addEventListener('click', (event) => {
-            console.log('Canvas clicked!');  // Проверяем, срабатывает ли событие на canvas
             const rect = maskCanvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
+            const x = event.clientX - rect.left;  // Координаты клика по canvas
             const y = event.clientY - rect.top;
+    
             console.log(`Click coordinates on canvas: X=${x}, Y=${y}`);
-
+    
+            // Пересчет координат клика в оригинальный размер изображения
+            const originalWidth = modalImage.naturalWidth;  // Оригинальная ширина изображения
+            const originalHeight = modalImage.naturalHeight;  // Оригинальная высота изображения
+            const scaledX = Math.floor((x / maskCanvas.width) * originalWidth);  // Пересчет X
+            const scaledY = Math.floor((y / maskCanvas.height) * originalHeight);  // Пересчет Y
+    
+            console.log(`Scaled click coordinates: X=${scaledX}, Y=${scaledY}`);
+    
             if (activeFrameId) {
                 console.log(`Sending request for frame ID: ${activeFrameId}`);
-                fetch(`/generate_mask/`, {
+                
+                fetch(`/en/generate_mask/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}'
                     },
-                    body: JSON.stringify({ frame_id: activeFrameId, point_x: x, point_y: y })
+                    body: JSON.stringify({
+                        frame_id: activeFrameId,
+                        point_x: scaledX,
+                        point_y: scaledY,
+                        tag_id: 1  // Укажите здесь существующий ID тега или передайте динамически
+                    })
                 })
-                .then(response => response.json())
+                
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log('Server response:', data);
                     if (data.mask_url) {
@@ -121,21 +141,21 @@
                 .catch(error => console.error('Error during fetch:', error));
             }
         });
-
+    
         frameCards.forEach(card => {
             card.addEventListener('click', (event) => {
                 if (event.target.classList.contains('delete-checkbox')) return;
-
+    
                 const frameId = card.dataset.frameId;
                 const frameUrl = card.dataset.frameUrl;
                 const frameName = card.dataset.frameName;
-
+    
                 console.log(`Opening modal for frame ID: ${frameId}, URL: ${frameUrl}`);
                 showModal(frameId, frameUrl, frameName);
                 event.stopPropagation();
             });
         });
-
+    
         closeButton.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => {
             if (event.target === modal) {
@@ -143,5 +163,6 @@
             }
         });
     });
+     
 </script>
 {% endblock %}

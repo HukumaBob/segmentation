@@ -1,5 +1,6 @@
 import os
 from django.db import models
+from PIL import Image
 from django.utils.translation import gettext_lazy as _
 
 class ObjectClass(models.Model):
@@ -62,6 +63,19 @@ class FrameSequence(models.Model):
     frame_file = models.ImageField(upload_to='frames/', verbose_name=_("Frame"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
+    # Добавляем поля для хранения размеров кадра
+    height = models.IntegerField(null=True, blank=True, verbose_name=_("Height of frame"))
+    width = models.IntegerField(null=True, blank=True, verbose_name=_("Width of frame"))
+
+    def save(self, *args, **kwargs):
+        """
+        Переопределяем метод save, чтобы автоматически заполнять поля height и width.
+        """
+        if not self.height or not self.width:
+            image = Image.open(self.frame_file)
+            self.width, self.height = image.size  # Получаем размеры изображения
+        super(FrameSequence, self).save(*args, **kwargs)
+
     def __str__(self):
         return f"Кадр из последовательности {self.sequences.id} (id:{self.id})"
 
@@ -69,7 +83,7 @@ class FrameSequence(models.Model):
 class Mask(models.Model):
     frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
     mask_file = models.ImageField(upload_to='masks/', verbose_name=_("Mask file"))
-    tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tagк"))
+    tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     point_x = models.IntegerField()
     point_y = models.IntegerField()
