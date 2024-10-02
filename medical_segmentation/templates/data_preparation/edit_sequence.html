@@ -31,6 +31,7 @@
         </div>
         <div class="modal-info">
             <h5 id="modalFileName"></h5>
+            <button id="saveButton" class="btn btn-primary">{% trans 'Save Mask' %}</button>
             <button id="deleteButton" class="btn btn-danger">{% trans 'Delete' %}</button>
         </div>
     </div>
@@ -58,27 +59,49 @@
         const modalImage = document.getElementById('modalImage');
         const modalFileName = document.getElementById('modalFileName');
         const deleteButton = document.getElementById('deleteButton');
+        const saveButton = document.getElementById('saveButton');
         const closeButton = document.querySelector('.close-btn');
         const maskCanvas = document.getElementById('maskCanvas');
         const ctx = maskCanvas.getContext('2d');
         let activeFrameId = null;
-    
+
+        // Массив для хранения всех отмеченных точек
+        let points = [];
+
+        // Переменные для хранения размеров canvas и изображения на сервере
+        let canvasWidth, canvasHeight, imageWidth, imageHeight;
+
+        // Отключаем стандартное контекстное меню
+        maskCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
         // Открытие модального окна
         function showModal(frameId, frameUrl, frameName) {
             modal.style.display = 'block';
             modalImage.src = frameUrl;
             modalFileName.textContent = frameName;
             activeFrameId = frameId;
-    
+
             // Устанавливаем размеры canvas в соответствии с изображением
             setTimeout(() => {
-                maskCanvas.width = modalImage.clientWidth;
-                maskCanvas.height = modalImage.clientHeight;
+                canvasWidth = modalImage.clientWidth;
+                canvasHeight = modalImage.clientHeight;
+                maskCanvas.width = canvasWidth;
+                maskCanvas.height = canvasHeight;
                 ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                points = [];  // Очищаем точки при открытии нового кадра
                 console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
+
+                // Загрузка размеров изображения на сервере
+                fetch(`/get_image_size/?frame_id=${frameId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        imageWidth = data.width;
+                        imageHeight = data.height;
+                        console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
+                    });
             }, 100);
         }
-    
+
         // Закрытие модального окна
         function closeModal() {
             modal.style.display = 'none';
@@ -86,27 +109,74 @@
             modalFileName.textContent = '';
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
             activeFrameId = null;
+            points = [];  // Очищаем все точки при закрытии
         }
-    
+
+        // Отрисовка всех точек на canvas
+        function drawPoints() {
+            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);  // Очистка canvas
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);  // Радиус 5 пикселей
+                ctx.fillStyle = point.sign === '+' ? 'green' : 'red';  // Цвет точки в зависимости от знака
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+        }
+
         // Обработчик клика по canvas
-        maskCanvas.addEventListener('click', (event) => {
+        maskCanvas.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+
             const rect = maskCanvas.getBoundingClientRect();
             const x = event.clientX - rect.left;  // Координаты клика по canvas
             const y = event.clientY - rect.top;
-    
-            console.log(`Click coordinates on canvas: X=${x}, Y=${y}`);
-    
-            // Пересчет координат клика в оригинальный размер изображения
-            const originalWidth = modalImage.naturalWidth;  // Оригинальная ширина изображения
-            const originalHeight = modalImage.naturalHeight;  // Оригинальная высота изображения
-            const scaledX = Math.floor((x / maskCanvas.width) * originalWidth);  // Пересчет X
-            const scaledY = Math.floor((y / maskCanvas.height) * originalHeight);  // Пересчет Y
-    
-            console.log(`Scaled click coordinates: X=${scaledX}, Y=${scaledY}`);
-    
-            if (activeFrameId) {
-                console.log(`Sending request for frame ID: ${activeFrameId}`);
-                
+
+            const canvasX = Math.floor(x);
+            const canvasY = Math.floor(y);
+
+            console.log(`Canvas click: X=${canvasX}, Y=${canvasY}`);
+
+            // Обработка добавления или удаления точки
+            if (event.button === 2) {
+                points.push({ x: canvasX, y: canvasY, sign: '-' });
+            } else if (event.ctrlKey && event.button === 0) {
+                const removeIndex = points.findIndex(point => Math.hypot(point.x - canvasX, point.y - canvasY) < 10);
+                if (removeIndex !== -1) {
+                    points.splice(removeIndex, 1);
+                }
+            } else if (event.button === 0) {
+                points.push({ x: canvasX, y: canvasY, sign: '+' });
+            }
+
+            drawPoints();
+        });
+
+        // Пересчет координат относительно размера изображения на сервере
+        function transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+            return points.map(point => {
+                return {
+                    x: Math.round(point.x * imageWidth / canvasWidth),
+                    y: Math.round(point.y * imageHeight / canvasHeight),
+                    sign: point.sign
+                };
+            });
+        }
+
+        // Обработчик нажатия на кнопку Save Mask
+        saveButton.addEventListener('click', () => {
+            sendMaskData();
+        });
+
+        // Функция отправки данных на сервер
+        function sendMaskData() {
+            if (activeFrameId && points.length > 0) {
+                // Пересчет координат перед отправкой
+                const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
+                console.log(`Transformed points: ${JSON.stringify(transformedPoints)}`);
+
                 fetch(`/en/generate_mask/`, {
                     method: 'POST',
                     headers: {
@@ -115,12 +185,10 @@
                     },
                     body: JSON.stringify({
                         frame_id: activeFrameId,
-                        point_x: scaledX,
-                        point_y: scaledY,
-                        tag_id: 1  // Укажите здесь существующий ID тега или передайте динамически
+                        points: transformedPoints,
+                        tag_id: 1
                     })
                 })
-                
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Server responded with status: ${response.status}`);
@@ -135,27 +203,27 @@
                         img.onload = () => {
                             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
                             ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
+                            drawPoints();
                         };
                     }
                 })
                 .catch(error => console.error('Error during fetch:', error));
             }
-        });
-    
+        }
+
         frameCards.forEach(card => {
             card.addEventListener('click', (event) => {
                 if (event.target.classList.contains('delete-checkbox')) return;
-    
+
                 const frameId = card.dataset.frameId;
                 const frameUrl = card.dataset.frameUrl;
                 const frameName = card.dataset.frameName;
-    
-                console.log(`Opening modal for frame ID: ${frameId}, URL: ${frameUrl}`);
+
                 showModal(frameId, frameUrl, frameName);
                 event.stopPropagation();
             });
         });
-    
+
         closeButton.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => {
             if (event.target === modal) {
@@ -163,6 +231,5 @@
             }
         });
     });
-     
 </script>
 {% endblock %}
