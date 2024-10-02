@@ -83,11 +83,26 @@ class FrameSequence(models.Model):
 class Mask(models.Model):
     frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
     mask_file = models.ImageField(upload_to='masks/', verbose_name=_("Mask file"))
+    mask_color = models.CharField(max_length=7, verbose_name=_("Mask Color"), null=True, blank=True)  # HEX цвет маски
     tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
-    point_x = models.IntegerField()
-    point_y = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Маска для кадра {self.frame_sequence.id} ({self.tag})"
+
+
+class Points(models.Model):
+    POSITIVE = '+'
+    NEGATIVE = '-'
+    SIGN_CHOICES = [
+        (POSITIVE, 'Positive'),
+        (NEGATIVE, 'Negative')
+    ]
+
+    mask = models.ForeignKey(Mask, related_name='points', on_delete=models.CASCADE, verbose_name=_("Mask"))
+    points_sign = models.CharField(max_length=1, choices=SIGN_CHOICES, verbose_name=_("Sign"))  # Знак точки (+ или -)
+    point_x = models.IntegerField()
+    point_y = models.IntegerField()
+
+    def __str__(self):
+        return f"X:{self.point_x}, Y:{self.point_y}, Sign:{self.points_sign}"
