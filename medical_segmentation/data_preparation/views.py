@@ -2,7 +2,6 @@ import json
 import os
 import numpy as np
 from PIL import Image, ImageDraw
-from random import randint
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
