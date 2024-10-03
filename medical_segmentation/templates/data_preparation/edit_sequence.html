@@ -2,6 +2,8 @@
 {% block content %}
 {% load static %}
 {% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
 <div class="container-fluid">
     <h2>{% trans "Edit Frame Sequence" %} - {{ sequence.features }}</h2>
     <div class="row" id="frame-container">
@@ -54,6 +56,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const currentLang = document.documentElement.lang || 'en';
         const frameCards = document.querySelectorAll('.frame-card');
         const modal = document.getElementById('frameModal');
         const modalImage = document.getElementById('modalImage');
@@ -177,7 +180,7 @@
                 const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
                 console.log(`Transformed points: ${JSON.stringify(transformedPoints)}`);
 
-                fetch(`/en/generate_mask/`, {
+                fetch(`/${currentLang}/generate_mask/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
