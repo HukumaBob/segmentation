@@ -64,3 +64,4 @@ media_root/
 
 # Секретные настройки (например, переменные окружения)
 .env
+medical_segmentation/segment-anything-2
