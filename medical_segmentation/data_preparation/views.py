@@ -125,12 +125,12 @@ def generate_mask(request):
             mask_image = Image.new("RGBA", (frame_width, frame_height))
             mask_image.paste((0, 255, 0, 128), (0, 0), mask_overlay)  # Полупрозрачная маска зеленого цвета
 
-            # Наложение точек на сегментированную маску
-            draw = ImageDraw.Draw(mask_image)
-            for point in points:
-                x, y, sign = point['x'], point['y'], point['sign']
-                color = (0, 255, 0, 255) if sign == '+' else (255, 0, 0, 255)
-                draw.ellipse((x-3, y-3, x+3, y+3), fill=color)
+            # # Наложение точек на сегментированную маску
+            # draw = ImageDraw.Draw(mask_image)
+            # for point in points:
+            #     x, y, sign = point['x'], point['y'], point['sign']
+            #     color = (0, 255, 0, 255) if sign == '+' else (255, 0, 0, 255)
+            #     draw.ellipse((x-3, y-3, x+3, y+3), fill=color)
 
             # Сохранение результирующей маски
             mask_filename = f'mask_{frame_id}.png'

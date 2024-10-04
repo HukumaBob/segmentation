@@ -2,6 +2,7 @@
 {% block content %}
 {% load static %}
 {% load i18n %}
+{% load custom_filters %}
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
 <div class="container-fluid">
@@ -14,8 +15,9 @@
                     <div class="frame-wrapper">
                         <img src="{{ frame.frame_file.url }}" class="card-img-top frame-img" alt="{% trans 'Frame Image' %}">
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="background-color: {{ frame.sequences.features|generate_color }};">
                         <p class="card-text">{{ frame.frame_file.name }}</p>
+                        <p class="card-text">{{ frame.sequences.features }}</p>
                     </div>
                 </div>
             </div>
