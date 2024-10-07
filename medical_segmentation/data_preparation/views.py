@@ -1,7 +1,7 @@
 import json
 import os
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
@@ -32,10 +32,14 @@ def edit_sequence(request, sequence_id):
     frames = FrameSequence.objects.filter(sequences=sequence)
     video = sequence.video
 
+    # Получаем все доступные теги для отображения в шаблоне
+    tags = ObjectClass.objects.all()
+
     context = {
         'sequence': sequence,
         'frames': frames,
         'video': video,
+        'tags': tags,  # Передаем список тегов в шаблон
     }
     return render(request, 'data_preparation/edit_sequence.html', context)
 
@@ -63,6 +67,7 @@ def generate_mask(request):
             frame_id = data.get('frame_id')
             points = data.get('points')
             tag_id = data.get('tag_id')
+            mask_color = data.get('mask_color', '#00FF00')  # Цвет маски из запроса или значение по умолчанию
 
             if frame_id is None or not points or tag_id is None:
                 return JsonResponse({'error': 'Missing required parameters'}, status=400)
@@ -82,16 +87,23 @@ def generate_mask(request):
             if clicked_points.size == 0:
                 return JsonResponse({'error': 'No points provided for segmentation'}, status=400)
 
-            # Определяем директорию кадра и создаем вложенную директорию "mask"
+            # Определение директории кадра и создание директории "mask", если не существует
             frame_dir = os.path.dirname(frame.frame_file.path)
             mask_dir = os.path.join(frame_dir, "mask")
             os.makedirs(mask_dir, exist_ok=True)
+
+            # Проверяем, существует ли маска для данного кадра и тега
+            mask_record, created = Mask.objects.get_or_create(
+                frame_sequence=frame,
+                tag=tag,
+                defaults={'mask_file': '', 'mask_color': mask_color}
+            )
 
             # Инициализация SAM2 для работы с последовательностью кадров
             inference_state = predictor.init_state(video_path=frame_dir)
 
             # Сегментируем маску с помощью SAM2
-            _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
+            _, _, out_mask_logits = predictor.add_new_points_or_box(
                 inference_state=inference_state,
                 frame_idx=0,
                 obj_id=1,
@@ -114,19 +126,13 @@ def generate_mask(request):
             mask_path = os.path.join(mask_dir, mask_filename)
             mask_image.save(mask_path)
 
-            # Формируем относительный URL маски
-            relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
-            relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url.replace(os.sep, '/')}"
+            # Обновляем существующую маску или сохраняем новую
+            mask_record.mask_file = mask_path
+            mask_record.mask_color = mask_color
+            mask_record.save()
 
-            # Создание объекта Mask
-            mask_record = Mask.objects.create(
-                frame_sequence=frame,
-                mask_file=relative_mask_url,
-                tag=tag,
-                mask_color="#00FF00"
-            )
-
-            # Сохранение точек в модели Points
+            # Сохранение точек в модели Points (обновляем или создаем заново)
+            Points.objects.filter(mask=mask_record).delete()  # Удаляем предыдущие точки
             for point in points:
                 Points.objects.create(
                     mask=mask_record,
@@ -135,8 +141,12 @@ def generate_mask(request):
                     point_y=point['y']
                 )
 
+            # Формируем URL маски
+            relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
+            relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url.replace(os.sep, '/')}"
+
             # Возвращаем относительный URL маски и цвет
-            return JsonResponse({'mask_url': relative_mask_url, 'mask_color': "#00FF00"})
+            return JsonResponse({'mask_url': relative_mask_url, 'mask_color': mask_color})
 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
@@ -145,4 +155,3 @@ def generate_mask(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
-
