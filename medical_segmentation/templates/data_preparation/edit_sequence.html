@@ -65,7 +65,7 @@
     .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); }
     .modal-content { position: relative; margin: 5% auto; width: 75%; height: 75%; background: #ffffff; display: flex; flex-direction: row; align-items: flex-start; padding: 10px; }
     .modal-image-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: #f7f7f7; position: relative;  }
-    .modal-image { max-width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 1; }
+    .modal-image { max-width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
     .mask-canvas { position: absolute; top: 0; left: 0; z-index: 2; max-width: 100%; height: 100%; }
     .modal-info { width: 30%; padding-left: 15px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
     .tag-selector, .color-selector { margin-top: 20px; width: 100%; }
@@ -103,7 +103,7 @@
             modalImage.src = frameUrl;
             modalFileName.textContent = frameName;
             activeFrameId = frameId;
-
+        
             // Устанавливаем размеры canvas в соответствии с изображением
             setTimeout(() => {
                 canvasWidth = modalImage.clientWidth;
@@ -113,7 +113,7 @@
                 ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
                 points = [];  // Очищаем точки при открытии нового кадра
                 console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
-
+        
                 // Загрузка размеров изображения на сервере
                 fetch(`/get_image_size/?frame_id=${frameId}`)
                     .then(response => response.json())
@@ -121,9 +121,15 @@
                         imageWidth = data.width;
                         imageHeight = data.height;
                         console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
+        
+                        // Проверка коэффициентов масштабирования
+                        const scaleX = imageWidth / canvasWidth;
+                        const scaleY = imageHeight / canvasHeight;
+                        console.log(`Scale factors - X: ${scaleX}, Y: ${scaleY}`);
                     });
             }, 100);
         }
+        
 
         // Закрытие модального окна
         function closeModal() {
@@ -135,7 +141,7 @@
             points = [];  // Очищаем все точки при закрытии
         }
 
-        // Функция отрисовки всех точек на canvas
+        // Функция отрисовки всех точек на canvas с метками координат
         function drawPoints() {
             points.forEach(point => {
                 ctx.beginPath();
@@ -145,19 +151,35 @@
                 ctx.strokeStyle = 'white';
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
+
+                // Отрисовываем текстовые координаты для визуализации
+                ctx.font = '12px Arial';
+                ctx.fillStyle = 'black';
+                ctx.fillText(`(${point.x}, ${point.y})`, point.x + 5, point.y - 5);
             });
         }
 
-        // Пересчет координат относительно размера изображения на сервере
+
         function transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+            // Определяем точные коэффициенты масштабирования
+            const scaleX = imageWidth / canvasWidth;
+            const scaleY = imageHeight / canvasHeight;
+        
             return points.map(point => {
+                // Вычисляем исходные координаты на основе коэффициентов масштаба
+                const transformedX = point.x * scaleX;
+                const transformedY = point.y * scaleY;
+        
+                // Округление до ближайшего целого для точного позиционирования
                 return {
-                    x: Math.round(point.x * imageWidth / canvasWidth),
-                    y: Math.round(point.y * imageHeight / canvasHeight),
+                    x: Math.round(transformedX),
+                    y: Math.round(transformedY),
                     sign: point.sign
                 };
             });
         }
+        
+        
 
         // Обработчик клика по canvas
         maskCanvas.addEventListener('mousedown', (event) => {

@@ -87,6 +87,10 @@ def generate_mask(request):
             if clicked_points.size == 0:
                 return JsonResponse({'error': 'No points provided for segmentation'}, status=400)
 
+            # Логируем пересчитанные точки для отладки
+            print(f"Received points (transformed): {clicked_points}")
+            print(f"Image size (server): {frame_width}x{frame_height}")
+
             # Определение директории кадра и создание директории "mask", если не существует
             frame_dir = os.path.dirname(frame.frame_file.path)
             mask_dir = os.path.join(frame_dir, "mask")
