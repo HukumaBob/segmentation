@@ -95,19 +95,29 @@ def upload_video(request):
 def delete_video(request):
     if request.method == 'POST':
         file_url = request.POST.get('file_url')
-        video = Video.objects.filter(video_file=file_url.split('/media/')[1]).first()
+        if not file_url:
+            return JsonResponse({'status': 'failed', 'error': 'File URL is missing'})
+        
+        # Извлечение имени файла из URL
+        try:
+            video_file_path = file_url.split('/media/')[1]
+        except IndexError:
+            return JsonResponse({'status': 'failed', 'error': 'Invalid file URL'})
+        
+        # Поиск объекта в базе данных
+        video = Video.objects.filter(video_file=video_file_path).first()
 
         # Убедитесь, что видео существует и удалите его из базы данных и файловой системы
         if video:
             try:
-                video.video_file.delete(save=False)  # Удаляем файл
-                video.delete()  # Удаляем запись в базе данных
+                video.delete()  # Удаляем запись и связанные файлы
                 return JsonResponse({'status': 'success'})
             except Exception as e:
                 return JsonResponse({'status': 'failed', 'error': str(e)})
         else:
             return JsonResponse({'status': 'failed', 'error': 'Video does not exist'})
     return JsonResponse({'status': 'failed'})
+
 
 def create_frame_sequence(request, video_id):
     logger.info(f"Create frame sequence called for video: {video_id}")
