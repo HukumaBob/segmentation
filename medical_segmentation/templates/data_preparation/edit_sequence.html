@@ -54,12 +54,22 @@
                 <label for="colorSelect">{% trans "Mask Color" %}:</label>
                 <input type="color" id="colorSelect" class="form-control" value="#00FF00">  <!-- Значение по умолчанию — зеленый -->
             </div>
+            
+            <!-- Блок для списка масок -->
+            <div id="maskContainer" class="mask-container">
+                <h6>{% trans "Available Masks" %}</h6>
+                <div id="maskList" class="mask-list">
+                    <!-- Список масок будет динамически добавляться сюда -->
+                </div>
+            </div>
+
             <div>
                 <button id="extrapolateBtn" class="btn btn-primary mt-3">{% trans "Create mask for all frames" %}</button>
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
     .frame-card { position: relative; cursor: pointer; display: flex; flex-direction: column; height: 100%; }
@@ -75,6 +85,30 @@
     .close-btn { position: absolute; top: 15px; right: 20px; font-size: 30px; color: #aaa; cursor: pointer; }
     .close-btn:hover, .close-btn:focus { color: #000; }
     .delete-checkbox { position: absolute; top: 10px; left: 10px; z-index: 105; transform: scale(1.5); cursor: pointer; }
+    .mask-container {
+        margin-top: 20px;
+        width: 100%;
+        padding-left: 5px;
+    }
+
+    .mask-list {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+        max-height: 200px;
+        overflow-y: auto; /* Прокрутка для большого списка */
+    }
+
+    .mask-item {
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .mask-item input {
+        margin-right: 5px;
+    }    
 </style>
 
 <script>
@@ -90,6 +124,7 @@
         const colorSelect = document.getElementById('colorSelect');  // Получаем элемент выбора цвета
         const ctx = maskCanvas.getContext('2d');
         const extrapolateBtn = document.getElementById('extrapolateBtn');
+        const maskListContainer = document.getElementById('maskList');  // Контейнер для списка масок
         let activeFrameId = null;
 
         // Массив для хранения всех отмеченных точек
@@ -107,8 +142,8 @@
             modalImage.src = frameUrl;
             modalFileName.textContent = frameName;
             activeFrameId = frameId;
-        
-            // Устанавливаем размеры canvas в соответствии с изображением
+            maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
+            
             setTimeout(() => {
                 canvasWidth = modalImage.clientWidth;
                 canvasHeight = modalImage.clientHeight;
@@ -126,13 +161,40 @@
                         imageHeight = data.height;
                         console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
         
-                        // Проверка коэффициентов масштабирования
-                        const scaleX = imageWidth / canvasWidth;
-                        const scaleY = imageHeight / canvasHeight;
-                        console.log(`Scale factors - X: ${scaleX}, Y: ${scaleY}`);
+                        // Загрузка всех масок для текущего кадра
+                        fetch(`/get_masks/?frame_id=${frameId}`)
+                            .then(response => response.json())
+                            .then(masks => {
+                                console.log('Masks loaded:', masks);
+                                // Добавляем маски в список выбора
+                                masks.forEach(mask => {
+                                    const maskItem = document.createElement('div');
+                                    maskItem.classList.add('mask-item');
+                                    
+                                    // Чекбокс для включения/выключения маски
+                                    const maskCheckbox = document.createElement('input');
+                                    maskCheckbox.type = 'checkbox';
+                                    maskCheckbox.dataset.maskId = mask.id;
+                                    maskCheckbox.dataset.maskUrl = mask.mask_file;  // Сохраняем URL маски
+                                    maskCheckbox.checked = true;  // По умолчанию все маски включены
+                                    maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
+                                    
+                                    // Элемент для отображения названия маски
+                                    const maskLabel = document.createElement('label');
+                                    maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
+                                    
+                                    maskItem.appendChild(maskCheckbox);
+                                    maskItem.appendChild(maskLabel);
+                                    maskListContainer.appendChild(maskItem);
+        
+                                    // Отрисовываем маску на canvas
+                                    drawMask(mask.mask_file);
+                                });
+                            });
                     });
             }, 100);
         }
+        
         
         extrapolateBtn.addEventListener('click', () => {
             const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
@@ -272,6 +334,7 @@
                         'X-CSRFToken': '{{ csrf_token }}'
                     },
                     body: JSON.stringify({
+                        sequence_id: {{ sequence.id }},
                         frame_id: activeFrameId,
                         points: transformedPoints,
                         tag_id: selectedTagId,  // Передаем выбранный тег
@@ -301,6 +364,37 @@
             }
         }
         
+    // Функция для отображения выбранной маски на canvas
+    function drawMask(maskUrl) {
+        const img = new Image();
+            // Убедитесь, что URL не содержит двойного /media/
+        if (maskUrl.startsWith('/media/media')) {
+            maskUrl = maskUrl.replace('/media/media', '/media');
+        }
+        console.log(`Drawing mask from URL: ${maskUrl}`);
+        img.src = `${maskUrl}?timestamp=${new Date().getTime()}`;
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
+        };
+    }
+
+    // Функция для включения/выключения масок
+    function toggleMask(maskId, maskUrl) {
+        const maskCheckbox = document.querySelector(`[data-mask-id="${maskId}"]`);
+        if (maskCheckbox.checked) {
+            drawMask(maskUrl);  // Включение маски
+        } else {
+            // Удаление маски из canvas
+            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);  // Очищаем все
+            // Перерисовываем оставшиеся включенные маски
+            document.querySelectorAll('.mask-item input:checked').forEach(checkbox => {
+                const activeMaskId = checkbox.dataset.maskId;
+                const activeMaskUrl = checkbox.dataset.maskUrl;
+                drawMask(activeMaskUrl);
+            });
+        }
+    }
+
         frameCards.forEach(card => {
             card.addEventListener('click', (event) => {
                 if (event.target.classList.contains('delete-checkbox')) return;

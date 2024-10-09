@@ -10,6 +10,14 @@ from segmentation.models import FrameSequence, Sequences, Mask, ObjectClass, Poi
 import torch
 from sam2.build_sam import build_sam2_video_predictor
 
+ALPHA = 96
+
+def hex_to_rgba(hex_color, alpha=128):
+    hex_color = hex_color.lstrip('#')
+    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    return (r, g, b, alpha)
+
+
 # Инициализация предсказателя
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Use device: {device}")
@@ -43,6 +51,20 @@ def edit_sequence(request, sequence_id):
     }
     return render(request, 'data_preparation/edit_sequence.html', context)
 
+def get_masks(request):
+    frame_id = request.GET.get('frame_id')
+    frame = get_object_or_404(FrameSequence, id=frame_id)
+    masks = Mask.objects.filter(frame_sequence=frame)
+
+    mask_data = [{
+        'id': mask.id,
+        'mask_file': mask.mask_file.url,
+        'tag': mask.tag.name if mask.tag else 'No tag',
+        'color': mask.mask_color
+    } for mask in masks]
+
+    return JsonResponse(mask_data, safe=False)
+
 @csrf_exempt
 def get_image_size(request):
     if request.method == 'GET':
@@ -64,7 +86,8 @@ def generate_mask(request):
             data = json.loads(request.body)
 
             # Получение данных из запроса
-            frame_id = data.get('frame_id')
+            sequence_id = data.get('sequence_id')
+            frame_id = int(data.get('frame_id'))
             points = data.get('points')
             tag_id = data.get('tag_id')
             mask_color = data.get('mask_color', '#00FF00')  # Цвет маски из запроса или значение по умолчанию
@@ -75,6 +98,33 @@ def generate_mask(request):
             # Поиск кадра и тега в базе данных
             frame = get_object_or_404(FrameSequence, id=frame_id)
             tag = get_object_or_404(ObjectClass, id=tag_id)
+            sequence = get_object_or_404(Sequences, id=sequence_id)
+
+            # Получение всех кадров для данной последовательности и сортировка по id
+            frames = FrameSequence.objects.filter(sequences=sequence).order_by('id')
+            if not frames.exists():
+                return JsonResponse({'error': 'No frames found for the given sequence'}, status=404)
+
+            # Печатаем все ID кадров в последовательности для отладки
+            frame_ids = [frame.id for frame in frames]
+            print(f"All frame IDs in sequence {sequence_id}: {frame_ids}")
+
+            # Проверяем, принадлежит ли frame_id данной последовательности
+            if frame_id not in frame_ids:
+                return JsonResponse({
+                    'error': f'Invalid frame ID {frame_id} for the selected sequence {sequence_id}.',
+                    'valid_ids': frame_ids,
+                    'received_id': frame_id
+                }, status=400)
+            
+            
+            # Создание словаря для сопоставления frame.id и индексов в последовательности
+            frame_index_map = {frame.id: index for index, frame in enumerate(frames)}
+            print(f"Frame index map: {frame_index_map}")
+
+            # Определяем индекс текущего кадра в последовательности
+            current_frame_index = frame_index_map[frame_id]
+            print(f"Using frame {frame_id} with sequence index {current_frame_index}")            
 
             # Получение размеров изображения
             image = Image.open(frame.frame_file.path).convert("RGB")
@@ -109,8 +159,8 @@ def generate_mask(request):
             # Сегментируем маску с помощью SAM2
             _, _, out_mask_logits = predictor.add_new_points_or_box(
                 inference_state=inference_state,
-                frame_idx=0,
-                obj_id=1,
+                frame_idx=current_frame_index,
+                obj_id=tag,
                 points=clicked_points,
                 labels=clicked_labels,
             )
@@ -123,11 +173,15 @@ def generate_mask(request):
             # Создание наложения маски
             mask_overlay = Image.fromarray((current_mask * 255).astype(np.uint8), mode='L')
             mask_image = Image.new("RGBA", (frame_width, frame_height))
-            mask_image.paste((0, 255, 0, 128), (0, 0), mask_overlay)
+            mask_image.paste((hex_to_rgba(hex_color=mask_color, alpha=ALPHA)), (0, 0), mask_overlay)
 
             # Генерируем имя файла маски
             mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame_id}.png"
+            print('000', mask_filename)
+
             mask_path = os.path.join(mask_dir, mask_filename)
+            print('0001', mask_path)
+
             mask_image.save(mask_path)
 
             # Обновляем существующую маску или сохраняем новую
@@ -147,7 +201,10 @@ def generate_mask(request):
 
             # Формируем URL маски
             relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
+            print('11111111111111111', relative_mask_url)
             relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url.replace(os.sep, '/')}"
+            print('222222222222222222', relative_mask_url)
+
 
             # Возвращаем относительный URL маски и цвет
             return JsonResponse({'mask_url': relative_mask_url, 'mask_color': mask_color})
@@ -167,6 +224,7 @@ def extrapolate_masks(request):
             data = json.loads(request.body)
 
             # Получаем данные из запроса и приводим current_frame_id к целому числу
+            points = data.get('points')
             sequence_id = data.get('sequence_id')
             tag_id = data.get('tag_id')
             mask_color = data.get('mask_color', '#00FF00')
@@ -215,46 +273,23 @@ def extrapolate_masks(request):
             initial_mask = Mask.objects.filter(frame_sequence=current_frame, tag=tag).first()
             if not initial_mask:
                 # Автоматически создаем начальную маску, если ее нет
-                print(f"Initial mask not found for frame {current_frame_id}. Creating a new one...")
+                print(f"Initial mask not found for frame {current_frame_id}.")
 
-                # Загрузим изображение и сгенерируем начальную маску
-                image = Image.open(current_frame.frame_file.path).convert("RGB")
-                frame_width, frame_height = image.size
-
-                # Создаем новую пустую маску (например, всю область заполняем заданным цветом)
-                mask_image = Image.new("RGBA", (frame_width, frame_height), (0, 255, 0, 128))
-                mask_dir = os.path.join(os.path.dirname(current_frame.frame_file.path), "mask")
-                os.makedirs(mask_dir, exist_ok=True)
-
-                # Сохранение новой маски
-                mask_filename = f"{os.path.splitext(os.path.basename(current_frame.frame_file.name))[0]}_initial_mask_{current_frame_id}.png"
-                mask_path = os.path.join(mask_dir, mask_filename)
-                mask_image.save(mask_path)
-
-                # Сохраняем новую запись маски в базе данных
-                initial_mask = Mask.objects.create(
-                    frame_sequence=current_frame,
-                    mask_file=mask_path,
-                    mask_color=mask_color,
-                    tag=tag
-                )
-                print(f"New initial mask created and saved: {initial_mask}")
-
-            # Получаем точки для новой маски (пока они будут пустыми)
-            points = Points.objects.filter(mask=initial_mask)
             print(f"Points found for mask: {list(points)}")
 
-            if not points.exists():
-                return JsonResponse({'error': f'No points found in the initial mask for frame {current_frame_id}'}, status=400)
+            # if not points.exists():
+            #     return JsonResponse({'error': f'No points found in the initial mask for frame {current_frame_id}'}, status=400)
 
             # Преобразуем точки в формат numpy
-            clicked_points = np.array([[pt.point_x, pt.point_y] for pt in points], dtype=np.float32)
-            clicked_labels = np.array([1 if pt.points_sign == '+' else 0 for pt in points], dtype=np.int32)
 
+            # Преобразуем точки в формат numpy
+            clicked_points = np.array([[pt['x'], pt['y']] for pt in points], dtype=np.float32)
+            clicked_labels = np.array([1 if pt['sign'] == '+' else 0 for pt in points], dtype=np.int32)
+            
             print(f"Transformed points: {clicked_points}, labels: {clicked_labels}")
 
             if clicked_points.size == 0:
-                return JsonResponse({'error': f'No points provided for segmentation in frame {current_frame_id}'}, status=400)
+                return JsonResponse({'error': 'No points provided for segmentation'}, status=400)
 
             # Логируем пересчитанные точки для отладки
             print(f"Received initial points (transformed) from frame {current_frame_id}: {clicked_points}")
@@ -271,14 +306,12 @@ def extrapolate_masks(request):
             _, _, initial_out_mask_logits = predictor.add_new_points_or_box(
                 inference_state=inference_state,
                 frame_idx=current_frame_index,  # Используем текущий индекс в последовательности
-                obj_id=1,
+                obj_id=tag,
                 points=clicked_points,
                 labels=clicked_labels,
             )
 
             print(f"Initial mask logits generated successfully for frame {current_frame_id}")
-
-            # Экстраполяция на все кадры...
 
             # Экстраполяция на все кадры
             for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state):
@@ -300,7 +333,7 @@ def extrapolate_masks(request):
                     mask_overlay = Image.fromarray((mask * 255).astype(np.uint8), mode='L')
                     frame_width, frame_height = mask_overlay.size
                     mask_image = Image.new("RGBA", (frame_width, frame_height))
-                    mask_image.paste((0, 255, 0, 128), (0, 0), mask_overlay)
+                    mask_image.paste((hex_to_rgba(hex_color=mask_color, alpha=ALPHA)), (0, 0), mask_overlay)
 
                     # Генерация имени файла маски
                     mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame_idx}.png"

@@ -1,4 +1,5 @@
 import os
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -93,7 +94,7 @@ class FrameSequence(models.Model):
 
 class Mask(models.Model):
     frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
-    mask_file = models.ImageField(upload_to='masks/', verbose_name=_("Mask file"))
+    mask_file = models.ImageField(upload_to='mask/', verbose_name=_("Mask file"))
     mask_color = models.CharField(max_length=7, verbose_name=_("Mask Color"), null=True, blank=True)
     tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
@@ -105,6 +106,10 @@ class Mask(models.Model):
 
     def __str__(self):
         return f"Маска для кадра {self.frame_sequence.id} ({self.tag})"
+    
+    @property
+    def mask_url(self):
+        return f"{settings.MEDIA_URL}{self.mask_file}"
 
 class Points(models.Model):
     POSITIVE = '+'
