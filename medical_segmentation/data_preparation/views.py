@@ -159,3 +159,170 @@ def generate_mask(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+def extrapolate_masks(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            # Получаем данные из запроса и приводим current_frame_id к целому числу
+            sequence_id = data.get('sequence_id')
+            tag_id = data.get('tag_id')
+            mask_color = data.get('mask_color', '#00FF00')
+            current_frame_id = int(data.get('current_frame_id'))  # Приводим ID текущего кадра к типу int
+
+            # Логируем входящие данные для отладки
+            print(f"Received parameters: sequence_id={sequence_id}, tag_id={tag_id}, current_frame_id={current_frame_id}")
+
+            if sequence_id is None or tag_id is None or current_frame_id is None:
+                return JsonResponse({'error': 'Missing required parameters'}, status=400)
+
+            # Поиск последовательности и тега в базе данных
+            sequence = get_object_or_404(Sequences, id=sequence_id)
+            tag = get_object_or_404(ObjectClass, id=tag_id)
+
+            # Получение всех кадров для данной последовательности и сортировка по id
+            frames = FrameSequence.objects.filter(sequences=sequence).order_by('id')
+            if not frames.exists():
+                return JsonResponse({'error': 'No frames found for the given sequence'}, status=404)
+
+            # Печатаем все ID кадров в последовательности для отладки
+            frame_ids = [frame.id for frame in frames]
+            print(f"All frame IDs in sequence {sequence_id}: {frame_ids}")
+
+            # Проверяем, принадлежит ли current_frame_id данной последовательности
+            if current_frame_id not in frame_ids:
+                return JsonResponse({
+                    'error': f'Invalid frame ID {current_frame_id} for the selected sequence {sequence_id}.',
+                    'valid_ids': frame_ids,
+                    'received_id': current_frame_id
+                }, status=400)
+
+            # Создание словаря для сопоставления frame.id и индексов в последовательности
+            frame_index_map = {frame.id: index for index, frame in enumerate(frames)}
+            print(f"Frame index map: {frame_index_map}")
+
+            # Определяем индекс текущего кадра в последовательности
+            current_frame_index = frame_index_map[current_frame_id]
+            print(f"Using frame {current_frame_id} with sequence index {current_frame_index}")
+
+            # Ищем текущий кадр по переданному ID
+            current_frame = get_object_or_404(FrameSequence, id=current_frame_id)
+            print(f"Current frame details: id={current_frame.id}, sequence={current_frame.sequences.id}, file={current_frame.frame_file.path}")
+
+            # Проверяем, существует ли начальная маска для текущего кадра
+            initial_mask = Mask.objects.filter(frame_sequence=current_frame, tag=tag).first()
+            if not initial_mask:
+                # Автоматически создаем начальную маску, если ее нет
+                print(f"Initial mask not found for frame {current_frame_id}. Creating a new one...")
+
+                # Загрузим изображение и сгенерируем начальную маску
+                image = Image.open(current_frame.frame_file.path).convert("RGB")
+                frame_width, frame_height = image.size
+
+                # Создаем новую пустую маску (например, всю область заполняем заданным цветом)
+                mask_image = Image.new("RGBA", (frame_width, frame_height), (0, 255, 0, 128))
+                mask_dir = os.path.join(os.path.dirname(current_frame.frame_file.path), "mask")
+                os.makedirs(mask_dir, exist_ok=True)
+
+                # Сохранение новой маски
+                mask_filename = f"{os.path.splitext(os.path.basename(current_frame.frame_file.name))[0]}_initial_mask_{current_frame_id}.png"
+                mask_path = os.path.join(mask_dir, mask_filename)
+                mask_image.save(mask_path)
+
+                # Сохраняем новую запись маски в базе данных
+                initial_mask = Mask.objects.create(
+                    frame_sequence=current_frame,
+                    mask_file=mask_path,
+                    mask_color=mask_color,
+                    tag=tag
+                )
+                print(f"New initial mask created and saved: {initial_mask}")
+
+            # Получаем точки для новой маски (пока они будут пустыми)
+            points = Points.objects.filter(mask=initial_mask)
+            print(f"Points found for mask: {list(points)}")
+
+            if not points.exists():
+                return JsonResponse({'error': f'No points found in the initial mask for frame {current_frame_id}'}, status=400)
+
+            # Преобразуем точки в формат numpy
+            clicked_points = np.array([[pt.point_x, pt.point_y] for pt in points], dtype=np.float32)
+            clicked_labels = np.array([1 if pt.points_sign == '+' else 0 for pt in points], dtype=np.int32)
+
+            print(f"Transformed points: {clicked_points}, labels: {clicked_labels}")
+
+            if clicked_points.size == 0:
+                return JsonResponse({'error': f'No points provided for segmentation in frame {current_frame_id}'}, status=400)
+
+            # Логируем пересчитанные точки для отладки
+            print(f"Received initial points (transformed) from frame {current_frame_id}: {clicked_points}")
+
+            # Инициализация предсказания для всего видео
+            frame_dir = os.path.dirname(current_frame.frame_file.path)
+            mask_dir = os.path.join(frame_dir, "mask")
+            os.makedirs(mask_dir, exist_ok=True)
+
+            inference_state = predictor.init_state(video_path=frame_dir)
+            video_segments = {}
+
+            print(f"Adding points to frame index {current_frame_index}")
+            _, _, initial_out_mask_logits = predictor.add_new_points_or_box(
+                inference_state=inference_state,
+                frame_idx=current_frame_index,  # Используем текущий индекс в последовательности
+                obj_id=1,
+                points=clicked_points,
+                labels=clicked_labels,
+            )
+
+            print(f"Initial mask logits generated successfully for frame {current_frame_id}")
+
+            # Экстраполяция на все кадры...
+
+            # Экстраполяция на все кадры
+            for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state):
+                video_segments[out_frame_idx] = {
+                    out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
+                    for i, out_obj_id in enumerate(out_obj_ids)
+                }
+
+            # Сохранение сегментированных масок
+            for frame in frames:
+                frame_idx = frame_index_map[frame.id]  # Получаем индекс текущего кадра
+                segments = video_segments.get(frame_idx, {})
+
+                for obj_id, mask in segments.items():
+                    if len(mask.shape) > 2:
+                        mask = mask.squeeze()
+
+                    # Создание наложения маски
+                    mask_overlay = Image.fromarray((mask * 255).astype(np.uint8), mode='L')
+                    frame_width, frame_height = mask_overlay.size
+                    mask_image = Image.new("RGBA", (frame_width, frame_height))
+                    mask_image.paste((0, 255, 0, 128), (0, 0), mask_overlay)
+
+                    # Генерация имени файла маски
+                    mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame_idx}.png"
+                    mask_path = os.path.join(mask_dir, mask_filename)
+                    mask_image.save(mask_path)
+
+                    # Обновляем или создаем новую запись маски в базе данных
+                    mask_record, created = Mask.objects.get_or_create(
+                        frame_sequence=frame,
+                        tag=tag,
+                        defaults={'mask_file': '', 'mask_color': mask_color}
+                    )
+                    mask_record.mask_file = mask_path
+                    mask_record.mask_color = mask_color
+                    mask_record.save()
+
+            return JsonResponse({'status': 'Extrapolation completed successfully'})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
