@@ -1,9 +1,6 @@
 import os
 import subprocess
 import uuid
-
-import os
-import subprocess
 import re
 
 def extract_frames_from_video(video_path, start_time, duration, fps, output_folder, left_crop=0, right_crop=0, top_crop=0, bottom_crop=0):
@@ -47,10 +44,10 @@ def extract_frames_from_video(video_path, start_time, duration, fps, output_fold
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"FFmpeg error: {e}")
 
-    # После извлечения кадров возвращаем список файлов в директории
+    # После извлечения кадров возвращаем список только новых файлов, начиная с текущего start_number
     extracted_frames = sorted([os.path.join('frames/', os.path.basename(output_folder), frame)
                                for frame in os.listdir(output_folder)
-                               if frame.endswith('.jpg')])
+                               if frame.endswith('.jpg') and int(re.search(r'(\d+)\.jpg$', frame).group(1)) >= start_number])
 
     return extracted_frames
 

@@ -180,7 +180,6 @@ def generate_mask(request):
             print('000', mask_filename)
 
             mask_path = os.path.join(mask_dir, mask_filename)
-            print('0001', mask_path)
 
             mask_image.save(mask_path)
 
@@ -201,9 +200,7 @@ def generate_mask(request):
 
             # Формируем URL маски
             relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
-            print('11111111111111111', relative_mask_url)
             relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url.replace(os.sep, '/')}"
-            print('222222222222222222', relative_mask_url)
 
 
             # Возвращаем относительный URL маски и цвет
