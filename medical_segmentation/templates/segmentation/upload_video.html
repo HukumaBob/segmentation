@@ -194,7 +194,7 @@
             }
         }
 
-        // Функция для показа предпросмотра видео
+
         function previewVideo(videoUrl, videoId) {
             if (videoUrl && videoPlayer && videoPreview) {
                 videoPlayer.src = videoUrl;
@@ -203,123 +203,153 @@
                 deleteButton.style.display = 'block';
                 deleteButton.dataset.fileUrl = videoUrl;  // Сохраняем URL файла для удаления
                 showFrameParameters(videoId);  // Показать параметры извлечения кадров
+        
+                // Проверяем и загружаем существующие последовательности
+                loadFrameSequencesIfExists(videoId);
             }
         }
-
-        // Обработчик загрузки видео
-        if (videoUploadForm) {
-            videoUploadForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const formData = new FormData(this);
-                if (conversionStatus) conversionStatus.style.display = 'block';
-                if (progressBar) progressBar.style.width = '0%';
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', "{% url 'upload_video' %}", true);
-                xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-
-                xhr.upload.onprogress = function (event) {
-                    if (event.lengthComputable && progressBar) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        progressBar.style.width = percentComplete + '%';
-                    }
-                };
-
-                xhr.onload = function () {
-                    if (xhr.status === 200) {
-                        const data = JSON.parse(xhr.responseText);
-                        if (conversionStatus) conversionStatus.style.display = 'none';
-                        if (data.file_url && videoPlayer && deleteButton) {
-                            previewVideo(data.file_url, data.video_id);
-                        }
-                    } else {
-                        console.error('Upload failed:', xhr.responseText);
-                    }
-                };
-
-                xhr.send(formData);
-            });
-        }
-
-        // Обработчик выбора видео из таблицы
-        const videosTable = document.getElementById('videosTable');
-        if (videosTable) {
-            videosTable.addEventListener('click', function (event) {
-                const target = event.target.closest('tr');
-                if (target) {
-                    const videoUrl = target.dataset.url;
-                    const videoId = target.dataset.id;
-                    previewVideo(videoUrl, videoId);
+        
+        function loadFrameSequencesIfExists(videoId) {
+            const checkUrl = `{% url 'view_frame_sequence' 0 %}`.replace(0, videoId);
+        
+            fetch(checkUrl, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
                 }
-            });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.sequences && data.sequences.length > 0) {
+                        // Обновляем таблицу с существующими последовательностями
+                        updateSequenceTable(data.sequences);
+                    } else {
+                        // Если нет существующих последовательностей, очищаем таблицу
+                        sequenceTableBody.innerHTML = ''; 
+                    }
+                } else {
+                    console.error('Error fetching sequences:', data.error);
+                }
+            })
+            .catch(error => console.error('Error while checking frame sequences:', error));
         }
+        
 
-        // Обработчик удаления видео
-        if (deleteButton) {
-            deleteButton.addEventListener('click', function () {
-                const fileUrl = this.dataset.fileUrl;  // Извлекаем URL файла для удаления
-                if (fileUrl) {
+            // Обработчик загрузки видео
+            if (videoUploadForm) {
+                videoUploadForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(this);
+                    if (conversionStatus) conversionStatus.style.display = 'block';
+                    if (progressBar) progressBar.style.width = '0%';
+
                     const xhr = new XMLHttpRequest();
-                    xhr.open('POST', "{% url 'delete_video' %}", true);  // Используем корректный URL для удаления видео
+                    xhr.open('POST', "{% url 'upload_video' %}", true);
                     xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+                    xhr.upload.onprogress = function (event) {
+                        if (event.lengthComputable && progressBar) {
+                            const percentComplete = (event.loaded / event.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+                        }
+                    };
 
                     xhr.onload = function () {
                         if (xhr.status === 200) {
                             const data = JSON.parse(xhr.responseText);
-                            if (data.status === 'success') {
-                                alert("{% trans 'Video deleted successfully.' %}");
-                                videoPlayer.style.display = 'none';  // Скрываем предпросмотр после удаления
-                            } else {
-                                console.error('Delete failed:', data.error);
+                            if (conversionStatus) conversionStatus.style.display = 'none';
+                            if (data.file_url && videoPlayer && deleteButton) {
+                                previewVideo(data.file_url, data.video_id);
                             }
+                        } else {
+                            console.error('Upload failed:', xhr.responseText);
                         }
                     };
 
-                    xhr.send(`file_url=${encodeURIComponent(fileUrl)}`);
-                }
-            });
-        }
+                    xhr.send(formData);
+                });
+            }
 
-        // Обработчик создания последовательности
-        if (createFramesButton) {
-            createFramesButton.addEventListener('click', function () {
-                const videoId = this.dataset.videoId;
-                const sequenceName = document.getElementById('sequenceName').value;
-                const startTime = document.getElementById('startTime').value;
-                const duration = document.getElementById('duration').value;
-                const fps = document.getElementById('fps').value;
-                const leftCrop = document.getElementById('leftCrop').value;
-                const rightCrop = document.getElementById('rightCrop').value;
-                const topCrop = document.getElementById('topCrop').value;
-                const bottomCrop = document.getElementById('bottomCrop').value;
+            // Обработчик выбора видео из таблицы
+            const videosTable = document.getElementById('videosTable');
+            if (videosTable) {
+                videosTable.addEventListener('click', function (event) {
+                    const target = event.target.closest('tr');
+                    if (target) {
+                        const videoUrl = target.dataset.url;
+                        const videoId = target.dataset.id;
+                        previewVideo(videoUrl, videoId);
+                    }
+                });
+            }
 
-                if (videoId && sequenceName) {
-                    const createUrl = `{% url 'create_frame_sequence' 0 %}`.replace(0, videoId) +
-                        `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
-                        `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
+            // Обработчик удаления видео
+            if (deleteButton) {
+                deleteButton.addEventListener('click', function () {
+                    const fileUrl = this.dataset.fileUrl;  // Извлекаем URL файла для удаления
+                    if (fileUrl) {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', "{% url 'delete_video' %}", true);  // Используем корректный URL для удаления видео
+                        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-                    fetch(createUrl, {
-                        method: 'GET',
-                        headers: {
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        }
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                updateSequenceTable(data.sequences);
-                            } else {
-                                console.error('Error:', data.error);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                const data = JSON.parse(xhr.responseText);
+                                if (data.status === 'success') {
+                                    alert("{% trans 'Video deleted successfully.' %}");
+                                    videoPlayer.style.display = 'none';  // Скрываем предпросмотр после удаления
+                                } else {
+                                    console.error('Delete failed:', data.error);
+                                }
+                            }
+                        };
+
+                        xhr.send(`file_url=${encodeURIComponent(fileUrl)}`);
+                    }
+                });
+            }
+
+            // Обработчик создания последовательности
+            if (createFramesButton) {
+                createFramesButton.addEventListener('click', function () {
+                    const videoId = this.dataset.videoId;
+                    const sequenceName = document.getElementById('sequenceName').value;
+                    const startTime = document.getElementById('startTime').value;
+                    const duration = document.getElementById('duration').value;
+                    const fps = document.getElementById('fps').value;
+                    const leftCrop = document.getElementById('leftCrop').value;
+                    const rightCrop = document.getElementById('rightCrop').value;
+                    const topCrop = document.getElementById('topCrop').value;
+                    const bottomCrop = document.getElementById('bottomCrop').value;
+
+                    if (videoId && sequenceName) {
+                        const createUrl = `{% url 'create_frame_sequence' 0 %}`.replace(0, videoId) +
+                            `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
+                            `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
+
+                        fetch(createUrl, {
+                            method: 'GET',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}'
                             }
                         })
-                        .catch(error => console.error('Error:', error));
-                } else {
-                    alert("Please provide a sequence name.");
-                }
-            });
-        }
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    updateSequenceTable(data.sequences);
+                                } else {
+                                    console.error('Error:', data.error);
+                                }
+                            })
+                            .catch(error => console.error('Error:', error));
+                    } else {
+                        alert("Please provide a sequence name.");
+                    }
+                });
+            }
 
         // Обновление таблицы последовательностей
         function updateSequenceTable(sequences) {

@@ -367,10 +367,6 @@
     // Функция для отображения выбранной маски на canvas
     function drawMask(maskUrl) {
         const img = new Image();
-            // Убедитесь, что URL не содержит двойного /media/
-        if (maskUrl.startsWith('/media/media')) {
-            maskUrl = maskUrl.replace('/media/media', '/media');
-        }
         console.log(`Drawing mask from URL: ${maskUrl}`);
         img.src = `${maskUrl}?timestamp=${new Date().getTime()}`;
         img.onload = () => {
@@ -382,6 +378,7 @@
     function toggleMask(maskId, maskUrl) {
         const maskCheckbox = document.querySelector(`[data-mask-id="${maskId}"]`);
         if (maskCheckbox.checked) {
+
             drawMask(maskUrl);  // Включение маски
         } else {
             // Удаление маски из canvas

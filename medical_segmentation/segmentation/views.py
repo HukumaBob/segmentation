@@ -119,6 +119,23 @@ def delete_video(request):
     return JsonResponse({'status': 'failed'})
 
 
+def view_frame_sequence(request, video_id):
+    logger.info(f"Fetching frame sequences for video: {video_id}")
+    video = get_object_or_404(Video, id=video_id)
+
+    # Извлекаем все последовательности, связанные с данным видео
+    sequences = [
+        {'id': seq.id, 'features': seq.features, 'start_time': seq.start_time, 'duration': seq.duration}
+        for seq in video.sequences.all()
+    ]
+
+    # Проверяем, есть ли последовательности
+    if not sequences:
+        return JsonResponse({'status': 'success', 'sequences': [], 'message': 'No sequences found for this video.'})
+
+    # Возвращаем список последовательностей и статус успеха
+    return JsonResponse({'status': 'success', 'sequences': sequences})
+
 def create_frame_sequence(request, video_id):
     logger.info(f"Create frame sequence called for video: {video_id}")
     video = get_object_or_404(Video, id=video_id)
