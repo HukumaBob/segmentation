@@ -177,16 +177,18 @@ def generate_mask(request):
 
             # Генерируем имя файла маски
             mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame_id}.png"
-            print('000', mask_filename)
 
             mask_path = os.path.join(mask_dir, mask_filename)
-
             mask_image.save(mask_path)
-
+            # Формируем URL маски
+            relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
+            relative_mask_url = f"{relative_mask_url.replace(os.sep, '/')}"
             # Обновляем существующую маску или сохраняем новую
-            mask_record.mask_file = mask_path
+            mask_record.mask_file = relative_mask_url
             mask_record.mask_color = mask_color
             mask_record.save()
+            relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url}"
+
 
             # Сохранение точек в модели Points (обновляем или создаем заново)
             Points.objects.filter(mask=mask_record).delete()  # Удаляем предыдущие точки
@@ -197,10 +199,6 @@ def generate_mask(request):
                     point_x=point['x'],
                     point_y=point['y']
                 )
-
-            # Формируем URL маски
-            relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
-            relative_mask_url = f"{settings.MEDIA_URL}{relative_mask_url.replace(os.sep, '/')}"
 
 
             # Возвращаем относительный URL маски и цвет
@@ -274,11 +272,6 @@ def extrapolate_masks(request):
 
             print(f"Points found for mask: {list(points)}")
 
-            # if not points.exists():
-            #     return JsonResponse({'error': f'No points found in the initial mask for frame {current_frame_id}'}, status=400)
-
-            # Преобразуем точки в формат numpy
-
             # Преобразуем точки в формат numpy
             clicked_points = np.array([[pt['x'], pt['y']] for pt in points], dtype=np.float32)
             clicked_labels = np.array([1 if pt['sign'] == '+' else 0 for pt in points], dtype=np.int32)
@@ -333,9 +326,11 @@ def extrapolate_masks(request):
                     mask_image.paste((hex_to_rgba(hex_color=mask_color, alpha=ALPHA)), (0, 0), mask_overlay)
 
                     # Генерация имени файла маски
-                    mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame_idx}.png"
+                    mask_filename = f"{os.path.splitext(os.path.basename(frame.frame_file.name))[0]}_mask_{frame.id}_tag_{tag}.png"
                     mask_path = os.path.join(mask_dir, mask_filename)
                     mask_image.save(mask_path)
+                    relative_mask_url = os.path.relpath(mask_path, settings.MEDIA_ROOT)
+                    relative_mask_url = f"{relative_mask_url.replace(os.sep, '/')}"                    
 
                     # Обновляем или создаем новую запись маски в базе данных
                     mask_record, created = Mask.objects.get_or_create(
@@ -343,7 +338,7 @@ def extrapolate_masks(request):
                         tag=tag,
                         defaults={'mask_file': '', 'mask_color': mask_color}
                     )
-                    mask_record.mask_file = mask_path
+                    mask_record.mask_file = relative_mask_url
                     mask_record.mask_color = mask_color
                     mask_record.save()
 
