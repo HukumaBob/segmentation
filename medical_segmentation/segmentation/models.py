@@ -74,20 +74,20 @@ class FrameSequence(models.Model):
     height = models.IntegerField(null=True, blank=True, verbose_name=_("Height of frame"))
     width = models.IntegerField(null=True, blank=True, verbose_name=_("Width of frame"))
 
-    def save(self, *args, **kwargs):
-        if not self.height or not self.width:
-            image = Image.open(self.frame_file)
-            self.width, self.height = image.size
-        super(FrameSequence, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.height or not self.width:
+    #         image = Image.open(self.frame_file)
+    #         self.width, self.height = image.size
+    #     super(FrameSequence, self).save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        if self.frame_file and os.path.isfile(self.frame_file.path):
-            os.remove(self.frame_file.path)
-        # Удаление связанных масок
-        masks = Mask.objects.filter(frame_sequence=self)
-        for mask in masks:
-            mask.delete()
-        super().delete(*args, **kwargs)
+    # def delete(self, *args, **kwargs):
+    #     if self.frame_file and os.path.isfile(self.frame_file.path):
+    #         os.remove(self.frame_file.path)
+    #     # Удаление связанных масок
+    #     masks = Mask.objects.filter(frame_sequence=self)
+    #     for mask in masks:
+    #         mask.delete()
+    #     super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"Кадр из последовательности {self.sequences.id} (id:{self.id})"

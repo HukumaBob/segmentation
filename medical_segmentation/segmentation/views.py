@@ -151,11 +151,11 @@ def create_frame_sequence(request, video_id):
     bottom_crop = int(request.GET.get('bottom_crop', 0))
 
     video_path = os.path.join(settings.MEDIA_ROOT, video.video_file.name)
-    output_folder = os.path.join(settings.MEDIA_ROOT, 'frames', os.path.splitext(os.path.basename(video.video_file.name))[0])
+    output_folder = os.path.join('frames', os.path.splitext(os.path.basename(video.video_file.name))[0], sequence_name)
 
     extracted_frames = extract_frames_from_video(
         video_path, start_time=start_time, duration=duration, 
-        fps=fps, output_folder=output_folder,
+        fps=fps, output_folder=os.path.join(settings.MEDIA_ROOT, output_folder),
         left_crop=left_crop, right_crop=right_crop,
         top_crop=top_crop, bottom_crop=bottom_crop
     )
@@ -178,7 +178,7 @@ def create_frame_sequence(request, video_id):
 
     # Сохраняем каждый кадр как объект FrameSequence
     for frame_path in extracted_frames:
-        frame_str_path = str(frame_path)
+        frame_str_path = os.path.join(output_folder, frame_path)
         FrameSequence.objects.create(
             sequences=sequence,
             frame_file=frame_str_path
@@ -230,7 +230,8 @@ def delete_frames_from_disk(sequence):
                 print(f"Удален файл: {frame.frame_file.path}")
             except Exception as e:
                 print(f"Ошибка при удалении файла {frame.frame_file.path}: {e}")
-                
+        else:
+            print('Файлы не найдены')
     # Удаляем все объекты FrameSequence для данной последовательности
     frames.delete()
 

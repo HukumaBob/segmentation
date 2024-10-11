@@ -45,7 +45,7 @@ def extract_frames_from_video(video_path, start_time, duration, fps, output_fold
         raise RuntimeError(f"FFmpeg error: {e}")
 
     # После извлечения кадров возвращаем список только новых файлов, начиная с текущего start_number
-    extracted_frames = sorted([os.path.join('frames/', os.path.basename(output_folder), frame)
+    extracted_frames = sorted([frame 
                                for frame in os.listdir(output_folder)
                                if frame.endswith('.jpg') and int(re.search(r'(\d+)\.jpg$', frame).group(1)) >= start_number])
 
