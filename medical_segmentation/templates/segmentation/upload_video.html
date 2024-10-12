@@ -208,6 +208,37 @@
                 loadFrameSequencesIfExists(videoId);
             }
         }
+
+        // Функция для обновления таблицы видео
+        function updateVideoTable() {
+            fetch("{% url 'get_videos' %}", {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const videosTableBody = document.querySelector('#videosTable tbody');
+                    videosTableBody.innerHTML = '';  // Очищаем таблицу
+
+                    data.videos.forEach(video => {
+                        const row = document.createElement('tr');
+                        row.dataset.id = video.id;
+                        row.dataset.url = `/media/${video.video_file}`;  // Формируем URL видеофайла
+                        row.innerHTML = `
+                            <td>${video.title}</td>
+                            <td>${new Date(video.created_at).toLocaleString()}</td>
+                        `;
+                        videosTableBody.appendChild(row);
+                    });
+                } else {
+                    console.error('Failed to fetch videos:', data.error);
+                }
+            })
+            .catch(error => console.error('Error while fetching videos:', error));
+        }
         
         function loadFrameSequencesIfExists(videoId) {
             const checkUrl = `{% url 'view_frame_sequence' 0 %}`.replace(0, videoId);
@@ -236,82 +267,82 @@
         }
         
 
-            // Обработчик загрузки видео
-            if (videoUploadForm) {
-                videoUploadForm.addEventListener('submit', function (event) {
-                    event.preventDefault();
+     // Обработчик загрузки видео
+     if (videoUploadForm) {
+        videoUploadForm.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-                    const formData = new FormData(this);
-                    if (conversionStatus) conversionStatus.style.display = 'block';
-                    if (progressBar) progressBar.style.width = '0%';
+            const formData = new FormData(this);
+            if (conversionStatus) conversionStatus.style.display = 'block';
+            if (progressBar) progressBar.style.width = '0%';
 
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', "{% url 'upload_video' %}", true);
-                    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', "{% url 'upload_video' %}", true);
+            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
 
-                    xhr.upload.onprogress = function (event) {
-                        if (event.lengthComputable && progressBar) {
-                            const percentComplete = (event.loaded / event.total) * 100;
-                            progressBar.style.width = percentComplete + '%';
-                        }
-                    };
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable && progressBar) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            };
 
-                    xhr.onload = function () {
-                        if (xhr.status === 200) {
-                            const data = JSON.parse(xhr.responseText);
-                            if (conversionStatus) conversionStatus.style.display = 'none';
-                            if (data.file_url && videoPlayer && deleteButton) {
-                                previewVideo(data.file_url, data.video_id);
-                            }
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (conversionStatus) conversionStatus.style.display = 'none';
+                    if (data.file_url && videoPlayer && deleteButton) {
+                        previewVideo(data.file_url, data.video_id);
+                    }
+                    updateVideoTable(); // Обновляем список видео после загрузки
+                } else {
+                    console.error('Upload failed:', xhr.responseText);
+                }
+            };
+
+            xhr.send(formData);
+        });
+    }
+
+    // Обработчик выбора видео из таблицы
+    if (videosTable) {
+        videosTable.addEventListener('click', function (event) {
+            const target = event.target.closest('tr');
+            if (target) {
+                const videoUrl = target.dataset.url;
+                const videoId = target.dataset.id;
+                previewVideo(videoUrl, videoId);
+            }
+        });
+    }
+
+    // Обработчик удаления видео
+    if (deleteButton) {
+        deleteButton.addEventListener('click', function () {
+            const fileUrl = this.dataset.fileUrl;
+            if (fileUrl) {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', "{% url 'delete_video' %}", true);
+                xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.status === 'success') {
+                            alert("{% trans 'Video deleted successfully.' %}");
+                            videoPlayer.style.display = 'none'; // Скрываем видео
+                            updateVideoTable(); // Обновляем список видео после удаления
                         } else {
-                            console.error('Upload failed:', xhr.responseText);
+                            console.error('Delete failed:', data.error);
                         }
-                    };
-
-                    xhr.send(formData);
-                });
-            }
-
-            // Обработчик выбора видео из таблицы
-            const videosTable = document.getElementById('videosTable');
-            if (videosTable) {
-                videosTable.addEventListener('click', function (event) {
-                    const target = event.target.closest('tr');
-                    if (target) {
-                        const videoUrl = target.dataset.url;
-                        const videoId = target.dataset.id;
-                        previewVideo(videoUrl, videoId);
                     }
-                });
+                };
+
+                xhr.send(`file_url=${encodeURIComponent(fileUrl)}`);
             }
-
-            // Обработчик удаления видео
-            if (deleteButton) {
-                deleteButton.addEventListener('click', function () {
-                    const fileUrl = this.dataset.fileUrl;  // Извлекаем URL файла для удаления
-                    if (fileUrl) {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', "{% url 'delete_video' %}", true);  // Используем корректный URL для удаления видео
-                        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-                        xhr.onload = function () {
-                            if (xhr.status === 200) {
-                                const data = JSON.parse(xhr.responseText);
-                                if (data.status === 'success') {
-                                    alert("{% trans 'Video deleted successfully.' %}");
-                                    videoPlayer.style.display = 'none';  // Скрываем предпросмотр после удаления
-                                } else {
-                                    console.error('Delete failed:', data.error);
-                                }
-                            }
-                        };
-
-                        xhr.send(`file_url=${encodeURIComponent(fileUrl)}`);
-                    }
-                });
-            }
-
+        });
+    }
             // Обработчик создания последовательности
             if (createFramesButton) {
                 createFramesButton.addEventListener('click', function () {

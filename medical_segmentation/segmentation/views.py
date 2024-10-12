@@ -92,6 +92,11 @@ def upload_video(request):
     videos = Video.objects.all()
     return render(request, 'segmentation/upload_video.html', {'form': VideoForm(), 'videos': videos})
 
+def get_videos(request):
+    """Возвращает список всех доступных видео."""
+    videos = Video.objects.all().values('id', 'title', 'created_at', 'video_file')
+    video_list = list(videos)
+    return JsonResponse({'status': 'success', 'videos': video_list})
 
 def delete_video(request):
     if request.method == 'POST':
