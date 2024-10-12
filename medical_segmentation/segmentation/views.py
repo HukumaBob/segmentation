@@ -1,3 +1,4 @@
+import shutil
 import uuid
 import os
 from django.shortcuts import get_object_or_404, render, redirect
@@ -200,8 +201,8 @@ def delete_sequence(request, sequence_id):
         sequence = get_object_or_404(Sequences, id=sequence_id)
         video = sequence.video
 
-        # Удаляем связанные кадры с диска
-        delete_frames_from_disk(sequence)
+        # Удаляем связанные кадры и их директорию с диска
+        delete_frames_directory(sequence)
 
         # Удаляем последовательность из базы данных
         sequence.delete()
@@ -215,23 +216,29 @@ def delete_sequence(request, sequence_id):
     except Exception as e:
         return JsonResponse({'status': 'failed', 'error': str(e)})
 
-def delete_frames_from_disk(sequence):
+def delete_frames_directory(sequence):
     """
-    Удаляет все файлы кадров, связанные с данной последовательностью, с диска.
+    Удаляет директорию, содержащую все кадры данной последовательности.
     """
     # Находим все кадры, связанные с данной последовательностью
     frames = FrameSequence.objects.filter(sequences=sequence)
 
-    # Проходим по каждому кадру и удаляем файл с диска
-    for frame in frames:
-        if frame.frame_file and os.path.isfile(frame.frame_file.path):
+    # Проверяем путь к первому кадру, чтобы найти директорию
+    if frames.exists():
+        first_frame_path = frames.first().frame_file.path
+        frame_dir = os.path.dirname(first_frame_path)
+
+        # Удаляем директорию, если она существует
+        if os.path.isdir(frame_dir):
             try:
-                os.remove(frame.frame_file.path)
-                print(f"Удален файл: {frame.frame_file.path}")
+                shutil.rmtree(frame_dir)
+                print(f"Удалена директория: {frame_dir}")
             except Exception as e:
-                print(f"Ошибка при удалении файла {frame.frame_file.path}: {e}")
+                print(f"Ошибка при удалении директории {frame_dir}: {e}")
         else:
-            print('Файлы не найдены')
+            print(f"Директория не найдена: {frame_dir}")
+    else:
+        print("Кадры для удаления не найдены.")
+
     # Удаляем все объекты FrameSequence для данной последовательности
     frames.delete()
-

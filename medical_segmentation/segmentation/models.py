@@ -1,10 +1,10 @@
 import os
+import shutil
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
-from PIL import Image
 from django.utils.translation import gettext_lazy as _
+import logging
+
 
 class ObjectClass(models.Model):
     name = models.CharField(_('Name'), max_length=100)
@@ -29,6 +29,8 @@ class ImageUpload(models.Model):
     def __str__(self):
         return f"Image {self.id} - {self.object_class or _('No class')}"
 
+logger = logging.getLogger(__name__)
+
 class Video(models.Model):
     title = models.CharField(max_length=255, verbose_name=_("Video title"))
     description = models.TextField(blank=True, verbose_name=_("Video description"))
@@ -39,13 +41,46 @@ class Video(models.Model):
         return f"Видео ({self.id}) {self.title}"
 
     def delete(self, *args, **kwargs):
-        video_dir = os.path.dirname(self.video_file.path)
-        if self.video_file and os.path.isfile(self.video_file.path):
-            os.remove(self.video_file.path)
+        video_path = self.video_file.path  # Путь к видеофайлу
+        video_dir = os.path.dirname(video_path)  # Директория видео
+
+        # Путь к папке с кадрами
+        video_name = os.path.splitext(os.path.basename(video_path))[0]  # Имя файла без расширения
+        frames_dir = os.path.join('frames', video_name)
+
+        # Удаляем видеофайл
+        if self.video_file and os.path.isfile(video_path):
+            try:
+                os.remove(video_path)
+                logger.info(f"Видео удалено: {video_path}")
+            except Exception as e:
+                logger.error(f"Ошибка при удалении видеофайла {video_path}: {e}")
+        else:
+            logger.warning(f"Файл для удаления не найден: {video_path}")
+
+        # Удаляем папку с кадрами
+        full_frames_dir = os.path.join(settings.MEDIA_ROOT, frames_dir)
+        if os.path.isdir(full_frames_dir):
+            try:
+                shutil.rmtree(full_frames_dir)
+                logger.info(f"Папка с кадрами удалена: {full_frames_dir}")
+            except Exception as e:
+                logger.error(f"Ошибка при удалении папки {full_frames_dir}: {e}")
+        else:
+            logger.warning(f"Папка с кадрами не найдена: {full_frames_dir}")
+
+        # Вызов метода родительского класса для удаления записи из БД
         super().delete(*args, **kwargs)
-        # Удаляем всю директорию с кадрами и масками, если она существует
-        if os.path.isdir(video_dir):
-            os.rmdir(video_dir)
+
+        # Удаляем директорию видео, если она пуста
+        try:
+            if os.path.isdir(video_dir) and not os.listdir(video_dir):
+                os.rmdir(video_dir)
+                logger.info(f"Директория удалена: {video_dir}")
+            else:
+                logger.warning(f"Директория не пуста или не существует: {video_dir}")
+        except Exception as e:
+            logger.error(f"Ошибка при удалении директории {video_dir}: {e}")
 
 class Sequences(models.Model):
     video = models.ForeignKey(Video, related_name='sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
@@ -73,21 +108,6 @@ class FrameSequence(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     height = models.IntegerField(null=True, blank=True, verbose_name=_("Height of frame"))
     width = models.IntegerField(null=True, blank=True, verbose_name=_("Width of frame"))
-
-    # def save(self, *args, **kwargs):
-    #     if not self.height or not self.width:
-    #         image = Image.open(self.frame_file)
-    #         self.width, self.height = image.size
-    #     super(FrameSequence, self).save(*args, **kwargs)
-
-    # def delete(self, *args, **kwargs):
-    #     if self.frame_file and os.path.isfile(self.frame_file.path):
-    #         os.remove(self.frame_file.path)
-    #     # Удаление связанных масок
-    #     masks = Mask.objects.filter(frame_sequence=self)
-    #     for mask in masks:
-    #         mask.delete()
-    #     super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"Кадр из последовательности {self.sequences.id} (id:{self.id})"
