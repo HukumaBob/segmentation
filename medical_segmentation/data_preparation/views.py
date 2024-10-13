@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from segmentation.models import FrameSequence, Sequences, Mask, ObjectClass, Points
@@ -351,3 +352,41 @@ def extrapolate_masks(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt  # Временно отключаем CSRF-проверку для тестирования
+def delete_frames(request):
+    """Удаляет выбранные кадры и их маски из базы данных и файловой системы."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'failed', 'error': 'Only POST requests are allowed.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))  # Загружаем JSON-данные
+        frame_ids = data.get('frame_ids', [])
+
+        if not frame_ids:
+            return JsonResponse({'status': 'failed', 'error': 'No frames selected.'}, status=400)
+
+        frames = FrameSequence.objects.filter(id__in=frame_ids)
+
+        # Удаляем маски и файлы кадров
+        for frame in frames:
+            delete_masks_for_frame(frame)  # Удаляем все маски для кадра
+
+            if frame.frame_file and os.path.isfile(frame.frame_file.path):
+                os.remove(frame.frame_file.path)  # Удаляем файл кадра с диска
+
+        # Удаляем кадры из базы данных
+        frames.delete()
+
+        return JsonResponse({'status': 'success'}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'failed', 'error': 'Invalid JSON data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'failed', 'error': str(e)}, status=500)
+
+def delete_masks_for_frame(frame):
+    """Удаляет все маски для данного кадра, включая файлы."""
+    masks = frame.masks.all()  # Получаем все маски, связанные с кадром
+    for mask in masks:
+        mask.delete()  # Используем метод delete(), чтобы гарантировать удаление файла
