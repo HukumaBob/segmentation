@@ -5,25 +5,34 @@
 {% load custom_filters %}
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
-<div class="container-fluid">
-    <h2>{% trans "Edit Frame Sequence" %} - {{ sequence.features }}</h2>
-    <div class="row" id="frame-container">
-        {% for frame in frames %}
-            <div class="col-3 mb-4">
-                <div class="card frame-card" data-frame-id="{{ frame.id }}" data-frame-name="{{ frame.frame_file.name }}" data-frame-url="{{ frame.frame_file.url }}">
-                    <input type="checkbox" class="delete-checkbox" id="checkbox-{{ frame.id }}" value="{{ frame.id }}">
-                    <div class="frame-wrapper">
-                        <img src="{{ frame.frame_file.url }}" class="card-img-top frame-img" alt="{% trans 'Frame Image' %}">
-                    </div>
-                    <div class="card-body" style="background-color: {{ frame.sequences.features|generate_color }};">
-                        <p class="card-text">{{ frame.frame_file.name }}</p>
-                        <p class="card-text">{{ frame.sequences.features }}</p>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{% trans "Edit Frame Sequence" %} - {{ sequence.features }}</h2>
+            <button id="deleteFramesBtn" class="btn btn-danger">{% trans "Delete Selected Frames" %}</button>
+        </div>
+        <div class="row" id="frame-container">
+            {% for frame in frames %}
+                <div class="col-3 mb-4">
+                    <div class="card frame-card" data-frame-id="{{ frame.id }}" data-frame-name="{{ frame.frame_file.name }}" data-frame-url="{{ frame.frame_file.url }}">
+                        <input type="checkbox" class="delete-checkbox" id="checkbox-{{ frame.id }}" value="{{ frame.id }}">
+        
+                        <div class="frame-wrapper" style="position: relative;">
+                            <!-- Изображение кадра -->
+                            <img src="{{ frame.frame_file.url }}" class="card-img-top frame-img" alt="{% trans 'Frame Image' %}" style="display: block;">
+        
+                            <!-- Canvas для масок в карточке -->
+                            <canvas class="frame-mask-canvas" id="canvas-{{ frame.id }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                        </div>
+        
+                        <div class="card-body" style="background-color: {{ frame.sequences.features|generate_color }};">
+                            <p class="card-text">{{ frame.frame_file.name }}</p>
+                            <p class="card-text">{{ frame.sequences.features }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>        
     </div>
-</div>
 
 <!-- Модальное окно -->
 <div id="frameModal" class="modal">
@@ -38,7 +47,7 @@
         
         <!-- Блок с информацией и выбором параметров -->
         <div class="modal-info">
-            <h5 id="modalFileName"></h5>
+            <h6 id="modalFileName"></h6>
             
             <!-- Селекторы для тегов и цвета -->
             <div class="tag-selector">
@@ -128,9 +137,9 @@
         width: 30%; padding-left: 15px; display: flex; flex-direction: 
         column; align-items: center; justify-content: flex-start; 
     }
-    .modal-info h5, 
+    .modal-info h6, 
     .modal-info label, 
-    .modal-info h6 {
+    .modal-info h9 {
     color: inherit; /* Унаследовать цвет от родительского контейнера */
     }
 </style>
@@ -149,75 +158,140 @@
         const ctx = maskCanvas.getContext('2d');
         const extrapolateBtn = document.getElementById('extrapolateBtn');
         const maskListContainer = document.getElementById('maskList');  // Контейнер для списка масок
+        const deleteFramesBtn = document.getElementById('deleteFramesBtn'); // Найдем кнопку Delete
         let activeFrameId = null;
 
-        // Массив для хранения всех отмеченных точек
-        let points = [];
+    deleteFramesBtn.addEventListener('click', () => {
+        // Получаем все отмеченные чекбоксы
+        const selectedFrames = Array.from(
+            document.querySelectorAll('.delete-checkbox:checked')
+        ).map((checkbox) => checkbox.value); // Извлекаем значения (ID кадров)
 
-        // Переменные для хранения размеров canvas и изображения на сервере
-        let canvasWidth, canvasHeight, imageWidth, imageHeight;
-
-        // Отключаем стандартное контекстное меню
-        maskCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        // Открытие модального окна
-        function showModal(frameId, frameUrl, frameName) {
-            modal.style.display = 'block';
-            modalImage.src = frameUrl;
-            modalFileName.textContent = frameName;
-            activeFrameId = frameId;
-            maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
-            
-            setTimeout(() => {
-                canvasWidth = modalImage.clientWidth;
-                canvasHeight = modalImage.clientHeight;
-                maskCanvas.width = canvasWidth;
-                maskCanvas.height = canvasHeight;
-                ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-                points = [];  // Очищаем точки при открытии нового кадра
-                console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
-        
-                // Загрузка размеров изображения на сервере
-                fetch(`/get_image_size/?frame_id=${frameId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        imageWidth = data.width;
-                        imageHeight = data.height;
-                        console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
-        
-                        // Загрузка всех масок для текущего кадра
-                        fetch(`/get_masks/?frame_id=${frameId}`)
-                            .then(response => response.json())
-                            .then(masks => {
-                                console.log('Masks loaded:', masks);
-                                // Добавляем маски в список выбора
-                                masks.forEach(mask => {
-                                    const maskItem = document.createElement('div');
-                                    maskItem.classList.add('mask-item');
-                                    
-                                    // Чекбокс для включения/выключения маски
-                                    const maskCheckbox = document.createElement('input');
-                                    maskCheckbox.type = 'checkbox';
-                                    maskCheckbox.dataset.maskId = mask.id;
-                                    maskCheckbox.dataset.maskUrl = mask.mask_file;  // Сохраняем URL маски
-                                    maskCheckbox.checked = true;  // По умолчанию все маски включены
-                                    maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
-                                    
-                                    // Элемент для отображения названия маски
-                                    const maskLabel = document.createElement('label');
-                                    maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
-                                    
-                                    maskItem.appendChild(maskCheckbox);
-                                    maskItem.appendChild(maskLabel);
-                                    maskListContainer.appendChild(maskItem);
-        
-                                    // Отрисовываем маску на canvas
-                                    drawMask(mask.mask_file);
-                                });
-                            });
-                    });
-            }, 100);
+        if (selectedFrames.length === 0) {
+            alert('Please select at least one frame to delete.');
+            return;
         }
+
+        if (confirm('Are you sure you want to delete the selected frames?')) {
+            fetch(`/${ currentLang }/delete_frames/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(), // Получаем CSRF-токен
+                },
+                body: JSON.stringify({ frame_ids: selectedFrames }), // Отправляем список ID кадров
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alert('Selected frames deleted successfully.');
+                        // Удаляем карточки кадров из интерфейса
+                        removeDeletedFrames(selectedFrames);
+                    } else {
+                        console.error('Error deleting frames:', data.error);
+                        alert('Error occurred while deleting frames.');
+                    }
+                })
+                .catch((error) => console.error('Error:', error));
+        }
+    });
+
+    // Функция для получения CSRF-токена из cookies
+    function getCSRFToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = decodeURIComponent(cookie.substring('csrftoken='.length));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Функция для удаления карточек кадров из контейнера
+    function removeDeletedFrames(frameIds) {
+        frameIds.forEach((frameId) => {
+            const frameCard = document.querySelector(`.frame-card[data-frame-id="${frameId}"]`);
+            if (frameCard) frameCard.remove(); // Удаляем карточку из DOM
+        });
+    }
+
+            // Массив для хранения всех отмеченных точек
+            let points = [];
+
+            // Переменные для хранения размеров canvas и изображения на сервере
+            let canvasWidth, canvasHeight, imageWidth, imageHeight;
+
+            // Отключаем стандартное контекстное меню
+            maskCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Открытие модального окна
+            function showModal(frameId, frameUrl, frameName) {
+                modal.style.display = 'block';
+                modalImage.src = frameUrl;
+                modalFileName.textContent = frameName;
+                activeFrameId = frameId;
+                maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
+                
+                setTimeout(() => {
+                    canvasWidth = modalImage.clientWidth;
+                    canvasHeight = modalImage.clientHeight;
+                    maskCanvas.width = canvasWidth;
+                    maskCanvas.height = canvasHeight;
+                    ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                    points = [];  // Очищаем точки при открытии нового кадра
+                    console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
+            
+                    // Загрузка размеров изображения на сервере
+                    fetch(`/get_image_size/?frame_id=${frameId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            imageWidth = data.width;
+                            imageHeight = data.height;
+                            console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
+            
+                            // Загрузка всех масок для текущего кадра
+                            fetch(`/get_masks/?frame_id=${frameId}`)
+                                .then(response => response.json())
+                                .then(masks => {
+                                    console.log('Masks loaded:', masks);
+                                    // Добавляем маски в список выбора
+                                    masks.forEach(mask => {
+                                        const maskItem = document.createElement('div');
+                                        maskItem.classList.add('mask-item');
+                                        
+                                        // Чекбокс для включения/выключения маски
+                                        const maskCheckbox = document.createElement('input');
+                                        maskCheckbox.type = 'checkbox';
+                                        maskCheckbox.dataset.maskId = mask.id;
+                                        maskCheckbox.dataset.maskUrl = mask.mask_file;  // Сохраняем URL маски
+                                        maskCheckbox.checked = true;  // По умолчанию все маски включены
+                                        maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
+                                        
+                                        // Элемент для отображения названия маски
+                                        const maskLabel = document.createElement('label');
+                                        maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
+                                        
+                                        maskItem.appendChild(maskCheckbox);
+                                        maskItem.appendChild(maskLabel);
+                                        maskListContainer.appendChild(maskItem);
+            
+                                        // Отрисовываем маску на canvas
+                                        drawMask(mask.mask_file);
+                                    });
+                                });
+                        });
+                }, 100);
+            }
         
         
         extrapolateBtn.addEventListener('click', () => {
@@ -416,18 +490,51 @@
         }
     }
 
-        frameCards.forEach(card => {
-            card.addEventListener('click', (event) => {
-                if (event.target.classList.contains('delete-checkbox')) return;
+    // Загружаем маски для всех кадров при первой загрузке страницы
+    frameCards.forEach(card => {
+        const frameId = card.dataset.frameId;
+        const canvas = document.getElementById(`canvas-${frameId}`);
+        const ctx = canvas.getContext('2d');
 
-                const frameId = card.dataset.frameId;
-                const frameUrl = card.dataset.frameUrl;
-                const frameName = card.dataset.frameName;
+        // Загружаем маски для этого кадра
+        loadMasks(frameId, ctx, canvas);
 
-                showModal(frameId, frameUrl, frameName);
-                event.stopPropagation();
-            });
+        // Устанавливаем обработчик для открытия модального окна
+        card.addEventListener('click', (event) => {
+            if (event.target.classList.contains('delete-checkbox')) return;
+
+            const frameUrl = card.dataset.frameUrl;
+            const frameName = card.dataset.frameName;
+
+            // Показ модального окна с кадром
+            showModal(frameId, frameUrl, frameName);
+
+            event.stopPropagation();
         });
+    });
+
+    // Функция для загрузки масок для указанного кадра
+    function loadMasks(frameId, ctx, canvas) {
+        fetch(`/get_masks/?frame_id=${frameId}`)
+            .then(response => response.json())
+            .then(masks => {
+                {% comment %} ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas {% endcomment %}
+                masks.forEach(mask => {
+                    drawMaskOnCanvas(ctx, mask.mask_file, canvas);
+                });
+            })
+            .catch(error => console.error(`Error loading masks for frame ${frameId}:`, error));
+    }
+
+    // Функция отрисовки маски на canvas
+    function drawMaskOnCanvas(ctx, maskUrl, canvas) {
+        const img = new Image();
+        img.src = `${maskUrl}?timestamp=${new Date().getTime()}`; // Кэширование
+        img.onload = () => {
+            {% comment %} ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas перед отрисовкой {% endcomment %}
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Отрисовываем маску
+        };
+    }
 
         closeButton.addEventListener('click', closeModal);
         window.addEventListener('click', (event) => {
