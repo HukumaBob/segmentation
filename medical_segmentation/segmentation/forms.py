@@ -1,5 +1,5 @@
 from django import forms
-from .models import ObjectClass, Sequences, Video
+from .models import Tag, Sequences, Video
 from django.utils.translation import gettext_lazy as _
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -21,7 +21,7 @@ class MultipleFileField(forms.FileField):
 class MultipleImageUploadForm(forms.Form):
     images = MultipleFileField(label=_("Images"))
     object_class = forms.ModelChoiceField(
-        queryset=ObjectClass.objects.all(),
+        queryset=Tag.objects.all(),
         label=_("Object Class")
         )
 
