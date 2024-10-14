@@ -2,7 +2,8 @@ import json
 import os
 import numpy as np
 from PIL import Image
-from django.http import JsonResponse
+from django.http import HttpResponseNotFound, JsonResponse
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -10,7 +11,7 @@ from segmentation.models import FrameSequence, Sequences, Mask, Tag, Points
 import torch
 from sam2.build_sam import build_sam2_video_predictor
 
-ALPHA = 96
+ALPHA = 128
 
 def hex_to_rgba(hex_color, alpha=128):
     hex_color = hex_color.lstrip('#')
@@ -64,6 +65,21 @@ def get_masks(request):
     } for mask in masks]
 
     return JsonResponse(mask_data, safe=False)
+
+@csrf_exempt
+def delete_mask(request):
+    mask_id = request.GET.get('mask_id')  # Получаем ID маски из параметров запроса
+    if not mask_id:
+        return HttpResponseNotFound("Mask ID not provided.")
+
+    # Пытаемся получить маску, если она существует
+    mask = get_object_or_404(Mask, id=mask_id)
+
+    try:
+        mask.delete()  # Удаляем маску
+        return JsonResponse({'status': 'success', 'message': f'Mask {mask_id} deleted.'}, status=200)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @csrf_exempt
 def get_image_size(request):
