@@ -47,6 +47,7 @@
         
         <!-- Блок с информацией и выбором параметров -->
         <div class="modal-info">
+            <label for="modalFileName">{% trans "Sequence number" %}:</label>
             <h6 id="modalFileName"></h6>
             
             <!-- Селекторы для тегов и цвета -->
@@ -81,7 +82,6 @@
 
 
 <style>
-
     body.dark-mode .modal-content {
         background-color: #333; /* Фон для DarkMode */
         color: #fff; /* Белый текст на тёмном фоне */
@@ -102,7 +102,7 @@
         background-color: var(--bs-body-bg, #ffffff); /* Поддержка разных тем */
         color: var(--bs-body-color, #000000); /* Адаптируемый цвет текста */
     }
-    .modal-image-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: #f7f7f7; position: relative;  }
+    .modal-image-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative;  }
     .modal-image { max-width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
     .mask-canvas { position: absolute; top: 0; left: 0; z-index: 2; max-width: 100%; height: 100%; }
     .tag-selector, .color-selector { margin-top: 20px; width: 100%; }
@@ -238,7 +238,8 @@
             function showModal(frameId, frameUrl, frameName) {
                 modal.style.display = 'block';
                 modalImage.src = frameUrl;
-                modalFileName.textContent = frameName;
+                // Update the modal's filename text content
+                modalFileName.textContent = frameName.split('/').pop().split('.')[0];
                 activeFrameId = frameId;
                 maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
                 

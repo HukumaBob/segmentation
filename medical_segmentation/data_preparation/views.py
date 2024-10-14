@@ -4,10 +4,9 @@ import numpy as np
 from PIL import Image
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from segmentation.models import FrameSequence, Sequences, Mask, ObjectClass, Points
+from segmentation.models import FrameSequence, Sequences, Mask, Tag, Points
 import torch
 from sam2.build_sam import build_sam2_video_predictor
 
@@ -42,7 +41,7 @@ def edit_sequence(request, sequence_id):
     video = sequence.video
 
     # Получаем все доступные теги для отображения в шаблоне
-    tags = ObjectClass.objects.all()
+    tags = Tag.objects.all()
 
     context = {
         'sequence': sequence,
@@ -98,7 +97,7 @@ def generate_mask(request):
 
             # Поиск кадра и тега в базе данных
             frame = get_object_or_404(FrameSequence, id=frame_id)
-            tag = get_object_or_404(ObjectClass, id=tag_id)
+            tag = get_object_or_404(Tag, id=tag_id)
             sequence = get_object_or_404(Sequences, id=sequence_id)
 
             # Получение всех кадров для данной последовательности и сортировка по id
@@ -234,7 +233,7 @@ def extrapolate_masks(request):
 
             # Поиск последовательности и тега в базе данных
             sequence = get_object_or_404(Sequences, id=sequence_id)
-            tag = get_object_or_404(ObjectClass, id=tag_id)
+            tag = get_object_or_404(Tag, id=tag_id)
 
             # Получение всех кадров для данной последовательности и сортировка по id
             frames = FrameSequence.objects.filter(sequences=sequence).order_by('id')

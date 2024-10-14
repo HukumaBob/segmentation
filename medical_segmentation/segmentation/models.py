@@ -6,8 +6,13 @@ from django.utils.translation import gettext_lazy as _
 import logging
 
 
-class ObjectClass(models.Model):
+class TagsCategory(models.Model):
+    tags_category = models.CharField(_('Category of tag'), max_length=100)
+
+class Tag(models.Model):
+    category = models.ForeignKey(TagsCategory, related_name='tags', on_delete=models.CASCADE, verbose_name=_("Tags category"))
     name = models.CharField(_('Name'), max_length=100)
+    code = models.CharField(null=True, max_length=10, default='0000000000', blank=True, verbose_name=_('Code of tag'))
     description = models.TextField(_('Description'), blank=True, null=True)
 
     def __str__(self):
@@ -15,7 +20,7 @@ class ObjectClass(models.Model):
 
 class ImageUpload(models.Model):
     image = models.ImageField(_('Image'), upload_to='uploads/')
-    object_class = models.ForeignKey(ObjectClass, verbose_name=_('Object Class'), on_delete=models.SET_NULL, null=True, blank=True)
+    tag = models.ForeignKey(Tag, verbose_name=_('Tag'), on_delete=models.SET_NULL, null=True, blank=True)
     mask = models.ImageField(_('Mask'), upload_to='masks/', blank=True, null=True)
     uploaded_at = models.DateTimeField(_('Uploaded At'), auto_now_add=True)
 
@@ -116,7 +121,7 @@ class Mask(models.Model):
     frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
     mask_file = models.ImageField(upload_to='mask/', verbose_name=_("Mask file"))
     mask_color = models.CharField(max_length=7, verbose_name=_("Mask Color"), null=True, blank=True)
-    tag = models.ForeignKey(ObjectClass, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
+    tag = models.ForeignKey(Tag, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     def delete(self, *args, **kwargs):
