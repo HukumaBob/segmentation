@@ -82,33 +82,110 @@
 
 
 <style>
+    /* Тёмная тема */
     body.dark-mode .modal-content {
-        background-color: #333; /* Фон для DarkMode */
-        color: #fff; /* Белый текст на тёмном фоне */
-    }    
+        background-color: #333;
+        color: #fff;
+    }
+    
     body.dark-mode .modal-info h5,
     body.dark-mode .modal-info label,
     body.dark-mode .modal-info h6 {
-        color: #fff; /* Белый текст для заголовков */
-    }    
-    .frame-card { position: relative; cursor: pointer; display: flex; flex-direction: column; height: 100%; }
-    .frame-wrapper { overflow: hidden; flex-grow: 1; }
-    .frame-card img { width: 100%; height: 100%; object-fit: cover; }
-    .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); }
-    .modal-content { \
-        position: relative; margin: 5% auto; width: 75%; height: 75%;
-        background: #ffffff; display: flex; flex-direction: row; align-items:
-        flex-start; padding: 10px;
-        background-color: var(--bs-body-bg, #ffffff); /* Поддержка разных тем */
-        color: var(--bs-body-color, #000000); /* Адаптируемый цвет текста */
+        color: #fff;
     }
-    .modal-image-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative;  }
-    .modal-image { max-width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-    .mask-canvas { position: absolute; top: 0; left: 0; z-index: 2; max-width: 100%; height: 100%; }
-    .tag-selector, .color-selector { margin-top: 20px; width: 100%; }
-    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 30px; color: #aaa; cursor: pointer; }
-    .close-btn:hover, .close-btn:focus { color: #000; }
-    .delete-checkbox { position: absolute; top: 10px; left: 10px; z-index: 105; transform: scale(1.5); cursor: pointer; }
+
+    /* Общий стиль для карточек */
+    .frame-card {
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .frame-wrapper {
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .frame-card img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    .delete-checkbox {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 105;
+        transform: scale(1.5);
+        cursor: pointer;
+    }
+
+    /* Стили для модального окна */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 200;
+        inset: 0; /* Альтернатива: top: 0; left: 0; width: 100%; height: 100%; */
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+    
+    .modal-content {
+        position: relative;
+        margin: 5% auto;
+        width: 75%;
+        height: 75%;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 10px;
+        background: var(--bs-body-bg, #fff); /* Тема по умолчанию */
+        color: var(--bs-body-color, #000);
+        border-radius: 0.5rem; /* Округленные углы для лучшего дизайна */
+    }
+    
+    .modal-image-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    
+    .modal-image, .mask-canvas {
+        max-width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .modal-info {
+        width: 30%;
+        padding-left: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    
+    .close-btn {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 30px;
+        color: #aaa;
+        cursor: pointer;
+    }
+    
+    .close-btn:hover, .close-btn:focus {
+        color: #000;
+    }
+    
+    /* Стили для контейнера с масками */
     .mask-container {
         margin-top: 20px;
         width: 100%;
@@ -121,7 +198,7 @@
         align-items: flex-start;
         padding: 10px;
         max-height: 200px;
-        overflow-y: auto; /* Прокрутка для большого списка */
+        overflow-y: auto; /* Прокрутка для длинного списка */
     }
     
     .mask-item {
@@ -132,15 +209,6 @@
     
     .mask-item input {
         margin-right: 5px;
-    }
-    .modal-info { 
-        width: 30%; padding-left: 15px; display: flex; flex-direction: 
-        column; align-items: center; justify-content: flex-start; 
-    }
-    .modal-info h6, 
-    .modal-info label, 
-    .modal-info h9 {
-    color: inherit; /* Унаследовать цвет от родительского контейнера */
     }
 </style>
 

@@ -8,6 +8,8 @@ import logging
 
 class TagsCategory(models.Model):
     tags_category = models.CharField(_('Category of tag'), max_length=100)
+    def __str__(self):
+        return self.tags_category    
 
 class Tag(models.Model):
     category = models.ForeignKey(TagsCategory, related_name='tags', on_delete=models.CASCADE, verbose_name=_("Tags category"))
