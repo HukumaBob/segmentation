@@ -16,7 +16,7 @@ class TagsCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'code', 'name', 'description')
+    list_display = ('id', 'code', 'category', 'name', 'description')
     search_fields = ('name',)    
 
 @admin.register(ImageUpload)
