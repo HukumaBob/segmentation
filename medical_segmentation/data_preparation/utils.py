@@ -12,7 +12,7 @@ ALPHA = 128
 def generate_mask_filename(frame, frame_id, tag_id):
     """Генерирует имя файла маски."""
     frame_name = os.path.splitext(os.path.basename(frame.frame_file.name))[0]
-    return f"{frame_name}_mask_{frame_id}_tag_{tag_id}.png"
+    return f"{frame_name}_mask_{frame_id}_tag-id_{tag_id}.png"
 
 def save_mask_image(mask_array, mask_color, frame_width, frame_height, mask_path):
     """Создаёт изображение маски и сохраняет его в указанный путь."""

@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from segmentation.models import FrameSequence, Sequences, Mask, Tag, Points
 from .utils import (
-    generate_mask_filename, save_mask_image, save_or_update_mask_record, hex_to_rgba
+    generate_mask_filename, save_mask_image, save_or_update_mask_record
 )
 import torch
 from sam2.build_sam import build_sam2_video_predictor
@@ -102,10 +102,6 @@ def get_image_size(request):
         return JsonResponse({'width': width, 'height': height})
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
-
-from .utils import (
-    generate_mask_filename, save_mask_image, save_or_update_mask_record
-)
 
 @csrf_exempt
 def generate_mask(request):

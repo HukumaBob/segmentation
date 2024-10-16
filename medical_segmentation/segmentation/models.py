@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 import logging
-
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 class TagsCategory(models.Model):
     tags_category = models.CharField(_('Category of tag'), max_length=100)
@@ -137,6 +138,12 @@ class Mask(models.Model):
     @property
     def mask_url(self):
         return f"{settings.MEDIA_URL}{self.mask_file}"
+
+@receiver(post_delete, sender=Mask)
+def delete_mask_file(sender, instance, **kwargs):
+    """Удаляем файл маски при удалении объекта Mask."""
+    if instance.mask_file and os.path.isfile(instance.mask_file.path):
+        os.remove(instance.mask_file.path)    
 
 class Points(models.Model):
     POSITIVE = '+'
