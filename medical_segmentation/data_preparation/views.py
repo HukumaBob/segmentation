@@ -68,18 +68,32 @@ def get_masks(request):
 
 @csrf_exempt
 def delete_mask(request):
-    mask_id = request.GET.get('mask_id')  # Получаем ID маски из параметров запроса
+    mask_id = request.GET.get('mask_id')  # Получаем ID маски
+    delete_all = request.GET.get('delete_all') == 'true'  # Проверяем флаг delete_all
+
     if not mask_id:
         return HttpResponseNotFound("Mask ID not provided.")
 
-    # Пытаемся получить маску, если она существует
+    # Пытаемся получить маску
     mask = get_object_or_404(Mask, id=mask_id)
 
-    try:
-        mask.delete()  # Удаляем маску
-        return JsonResponse({'status': 'success', 'message': f'Mask {mask_id} deleted.'}, status=200)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    if delete_all:
+        # Удаляем все маски с таким же тегом и ID >= текущего
+        masks_to_delete = Mask.objects.filter(tag=mask.tag, id__gte=mask.id)
+        deleted_ids = list(masks_to_delete.values_list('id', flat=True))  # Сохраняем ID удалённых масок
+        masks_to_delete.delete()  # Удаляем маски
+    else:
+        # Удаляем только одну маску
+        deleted_ids = [mask.id]
+        mask.delete()
+
+    return JsonResponse({
+        'status': 'success',
+        'deleted_ids': deleted_ids,
+        'message': f'Deleted {len(deleted_ids)} masks.'
+    }, status=200)
+
+
 
 @csrf_exempt
 def get_image_size(request):
