@@ -3,7 +3,8 @@ import os
 import numpy as np
 from PIL import Image
 from django.http import HttpResponseNotFound, JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -93,7 +94,11 @@ def delete_mask(request):
         'message': f'Deleted {len(deleted_ids)} masks.'
     }, status=200)
 
-
+@receiver(post_delete, sender=Mask)
+def delete_mask_file(sender, instance, **kwargs):
+    """Удаляем файл маски при удалении объекта Mask."""
+    if instance.mask_file and os.path.isfile(instance.mask_file.path):
+        os.remove(instance.mask_file.path)
 
 @csrf_exempt
 def get_image_size(request):
