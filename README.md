@@ -1,3 +1,5 @@
+![alt text](001.png)
+![alt text](002.png)
 ### `README.md` for the Endoscopic Image Annotation Dataset Project
 
 ---
