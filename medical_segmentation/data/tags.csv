@@ -1,0 +1,22 @@
+Tags_category,Code_of_tag,Name,Description
+anatomy,a_001000,mouthpiece,mouthpiece
+anatomy,a_010000,tongue,tongue
+anatomy,a_020000,root_of_the_tongue,root of the tongue
+anatomy,a_030000,palate,palate
+anatomy,a_050000,teeth,teeth
+anatomy,a_060000,uvula,uvula
+anatomy,a_070000,palatine_arch,palatine arch
+anatomy,a_080000,pharynx,pharynx
+anatomy,a_090000,epiglottis,epiglottis
+anatomy,a_100000,vestibular_fold,vestibular fold
+anatomy,a_110000,vocal_cord,vocal cord
+anatomy,a_120000,trachea,trachea
+anatomy,a_130000,aryepiglottic_fold,aryepiglottic fold
+anatomy,a_140000,oesophagus,oesophagus
+anatomy,a_150000,gastroesophageal_junction,gastroesophageal junction
+findings,f_001000,phlebectasia,phlebectasia
+anatomy,f_002000,glycogen acanthosis,glycogen acanthosis
+anatomy,f_003000,inlet_patch,inlet patch
+anatomy,a_160000,z_line,z line
+quality,q_001000,foam,foam
+quality,q_002000,mucus,mucus

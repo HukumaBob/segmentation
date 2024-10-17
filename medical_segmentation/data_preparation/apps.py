@@ -1,6 +1,8 @@
 from django.apps import AppConfig
 
 
-class DataPreparationConfig(AppConfig):
+class SegmentationConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'data_preparation'
+    name = 'segmentation'
+    def ready(self):
+        import segmentation.models

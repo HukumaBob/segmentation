@@ -136,7 +136,7 @@
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" id="createFrameSequenceUrl" value="{% url 'create_frame_sequence' 0 %}">
+                    <input type="hidden" id="createFrameSequenceUrl" value="{% url 'data_preparation:create_frame_sequence' 0 %}">
                     <button id="createFramesButton" class="btn btn-success btn-block mt-3" style="display: none;">{% trans "Create Frame Sequence" %}</button>
                 </div>
             </div>
@@ -211,7 +211,7 @@
 
         // Функция для обновления таблицы видео
         function updateVideoTable() {
-            fetch("{% url 'get_videos' %}", {
+            fetch("{% url 'data_preparation:get_videos' %}", {
                 method: 'GET',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
@@ -241,7 +241,7 @@
         }
         
         function loadFrameSequencesIfExists(videoId) {
-            const checkUrl = `{% url 'view_frame_sequence' 0 %}`.replace(0, videoId);
+            const checkUrl = `{% url 'data_preparation:view_frame_sequence' 0 %}`.replace(0, videoId);
         
             fetch(checkUrl, {
                 method: 'GET',
@@ -277,7 +277,7 @@
             if (progressBar) progressBar.style.width = '0%';
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', "{% url 'upload_video' %}", true);
+            xhr.open('POST', "{% url 'data_preparation:upload_video' %}", true);
             xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
 
             xhr.upload.onprogress = function (event) {
@@ -322,7 +322,7 @@
             const fileUrl = this.dataset.fileUrl;
             if (fileUrl) {
                 const xhr = new XMLHttpRequest();
-                xhr.open('POST', "{% url 'delete_video' %}", true);
+                xhr.open('POST', "{% url 'data_preparation:delete_video' %}", true);
                 xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
@@ -357,7 +357,7 @@
                     const bottomCrop = document.getElementById('bottomCrop').value;
 
                     if (videoId && sequenceName) {
-                        const createUrl = `{% url 'create_frame_sequence' 0 %}`.replace(0, videoId) +
+                        const createUrl = `{% url 'data_preparation:create_frame_sequence' 0 %}`.replace(0, videoId) +
                             `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
                             `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
 
@@ -427,7 +427,7 @@
 
         // Удаление последовательности
         function deleteSequence(sequenceId) {
-            fetch(`{% url 'delete_sequence' 0 %}`.replace(0, sequenceId), {
+            fetch(`{% url 'data_preparation:delete_sequence' 0 %}`.replace(0, sequenceId), {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'

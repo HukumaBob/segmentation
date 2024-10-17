@@ -23,9 +23,30 @@
                             <canvas class="frame-mask-canvas" id="canvas-{{ frame.id }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                         </div>
                         <div class="card-body" style="background-color: {{ frame.sequences.features|generate_color }};">
-                            <p class="card-text">{{ frame.frame_file.name }}</p>
-                            <p class="card-text">{{ frame.sequences.features }}</p>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{ frame.frame_file.name|filename }}
+                            </h6>
+                            <p class="card-text">
+                                {{ frame.sequences.features }}
+                            </p>
+                        
+                            <h5 class="card-title mt-3">{% trans "Masks" %}</h5>
+                            <ul class="list-group list-group-flush">
+                                {% for mask in frame.masks.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>{{ mask.tag.name }}</span>
+                                        <a href="{{ mask.mask_file.url }}" class="btn btn-sm btn-outline-primary">
+                                            {% trans "Download" %}
+                                        </a>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item text-muted">
+                                        {% trans "No masks available." %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
                         </div>
+                        
                     </div>
                 </div>
             {% endfor %}
