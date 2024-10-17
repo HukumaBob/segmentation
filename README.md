@@ -77,6 +77,11 @@ The project uses **SQLite** by default. You can also configure **PostgreSQL** or
 ```bash
 python manage.py migrate
 ```
+To fill in the primary data, use the command:
+
+```bash
+python manage.py import_tags
+```
 
 ### 3. Set Environment Variables
 Create a `.env` file to store configuration settings such as `MEDIA_ROOT` and security keys.
