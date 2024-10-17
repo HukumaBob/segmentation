@@ -1,39 +1,56 @@
-# segmentation/forms.py
 from django import forms
-from segmentation.models import Mask, FrameSequence, Tag, Points, Sequences
+from .models import Tag, Sequences, Video
+from django.utils.translation import gettext_lazy as _
 
-class MaskForm(forms.ModelForm):
-    class Meta:
-        model = Mask
-        fields = ['frame_sequence', 'tag', 'mask_file', 'mask_color']
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
-    def clean(self):
-        """Проверяем, что маска соответствует кадру и тегу."""
-        cleaned_data = super().clean()
-        frame_sequence = cleaned_data.get("frame_sequence")
-        tag = cleaned_data.get("tag")
-
-        if not frame_sequence or not tag:
-            raise forms.ValidationError("Кадр и тег обязательны для маски.")
-
-        return cleaned_data
-
-
-class PointsForm(forms.ModelForm):
-    class Meta:
-        model = Points
-        fields = ['mask', 'points_sign', 'point_x', 'point_y']
-
-
-class FrameDeletionForm(forms.Form):
-    frame_ids = forms.MultipleChoiceField(
-        widget=forms.CheckboxSelectMultiple,
-        required=True,
-        error_messages={'required': 'Выберите хотя бы один кадр для удаления.'},
-    )
-
+class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
-        frames = kwargs.pop('frames', None)
+        kwargs.setdefault("widget", MultipleFileInput())
         super().__init__(*args, **kwargs)
-        if frames:
-            self.fields['frame_ids'].choices = [(frame.id, str(frame)) for frame in frames]
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
+class MultipleImageUploadForm(forms.Form):
+    images = MultipleFileField(label=_("Images"))
+    object_class = forms.ModelChoiceField(
+        queryset=Tag.objects.all(),
+        label=_("Object Class")
+        )
+
+class VideoForm(forms.ModelForm):
+    class Meta:
+        model = Video
+        fields = ['id', 'title', 'description', 'video_file']
+
+class SequenceForm(forms.ModelForm):
+    class Meta:
+        model = Sequences
+        fields = ['id', 
+                    'video',
+                    'features', 
+                    'start_time',
+                    'duration',
+                    'fps',
+                    'left_crop',
+                    'right_crop',
+                    'top_crop',
+                    'bottom_crop'
+                    ]
+
+class VideoUploadForm(forms.ModelForm):
+    class Meta:
+        model = Video
+        fields = ['title', 'description', 'video_file']  # Включаем необходимые поля модели
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter video title'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter video description'}),
+            'video_file': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }

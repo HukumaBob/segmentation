@@ -6,13 +6,13 @@
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'upload_multiple_images' %}">{% trans "Upload Multiple Images" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:upload_multiple_images' %}">{% trans "Upload Multiple Images" %}</a>
         </li>         
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'image_list' %}">{% trans "Image List" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:image_list' %}">{% trans "Image List" %}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'upload_video' %}">{% trans "Upload video" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:upload_video' %}">{% trans "Upload video" %}</a>
         </li>
         {% comment %} <li class="nav-item">
           <a class="nav-link" href="{% url 'frame_list' %}">{% trans "Frame List" %}</a>
