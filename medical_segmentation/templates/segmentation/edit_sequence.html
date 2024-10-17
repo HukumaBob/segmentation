@@ -33,12 +33,17 @@
                             <h5 class="card-title mt-3">{% trans "Masks" %}</h5>
                             <ul class="list-group list-group-flush">
                                 {% for mask in frame.masks.all %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Квадратик с цветом -->
+                                        <span class="mask-color-square me-2" style="background-color: {{ mask.mask_color }};"></span>
                                         <span>{{ mask.tag.name }}</span>
-                                        <a href="{{ mask.mask_file.url }}" class="btn btn-sm btn-outline-primary">
-                                            {% trans "Download" %}
-                                        </a>
-                                    </li>
+                                    </div>
+                                    <a href="{{ mask.mask_file.url }}" class="btn btn-sm btn-outline-primary">
+                                        {% trans "Download" %}
+                                    </a>
+                                </li>
+                                
                                 {% empty %}
                                     <li class="list-group-item text-muted">
                                         {% trans "No masks available." %}
@@ -232,6 +237,14 @@
     .mask-item input {
         margin-right: 5px;
     }
+
+    .mask-color-square {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;  /* Скругленные углы */
+        border: 1px solid #ddd;  /* Тонкая граница */
+        display: inline-block;
+    }    
 </style>
 
 <script>
