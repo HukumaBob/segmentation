@@ -77,6 +77,11 @@ pip install -r requirements.txt
 ```bash
 python manage.py migrate
 ```
+Для заполнения первичных данных используйте команду:
+
+```bash
+python manage.py import_tags
+```
 
 ### 3. Настройка переменных окружения
 Создайте файл `.env` для хранения конфигурации, таких как `MEDIA_ROOT`, пути к файлам и ключей безопасности.
