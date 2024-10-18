@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'segmentation'
 urlpatterns = [
+    path('get-tags/', views.get_tags_by_category, name='get_tags_by_category'),
     path('sequence/<int:sequence_id>/edit/', views.edit_sequence, name='edit_sequence'),
     path('generate_mask/', views.generate_mask, name='generate_mask'),
     path('get_image_size/', views.get_image_size, name='get_image_size'),
