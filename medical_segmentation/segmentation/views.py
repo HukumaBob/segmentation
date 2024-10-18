@@ -6,7 +6,9 @@ from django.http import HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from .models import FrameSequence, Sequences, Mask, Tag, Points
+
+from .models import FrameSequence, Mask
+from data_preparation.models import Sequences, Tag, TagsCategory
 from .utils import (
     generate_mask_filename, save_mask_image, save_or_update_mask_record
 )
@@ -32,22 +34,31 @@ model_cfg = "sam2_hiera_l.yaml"
 # Создаем предсказатель SAM2
 predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
 
+
+def get_tags_by_category(request):
+    category_id = request.GET.get('category_id')
+    tags = Tag.objects.filter(category_id=category_id)
+
+    tag_data = [{'id': tag.id, 'name': tag.name} for tag in tags]
+    return JsonResponse(tag_data, safe=False)
+
 def edit_sequence(request, sequence_id):
     sequence = get_object_or_404(Sequences, id=sequence_id)
-    frames = FrameSequence.objects.filter(sequences=sequence).prefetch_related('masks')  # Загружаем маски вместе с кадрами
+    frames = FrameSequence.objects.filter(sequences=sequence).prefetch_related('masks')
     video = sequence.video
 
-    # Получаем все доступные теги для отображения в шаблоне
+    # Получаем все категории и теги
+    categories = TagsCategory.objects.all()
     tags = Tag.objects.all()
 
     context = {
         'sequence': sequence,
-        'frames': frames,  # Кадры с предзагруженными масками
+        'frames': frames,
         'video': video,
-        'tags': tags,  # Теги для выбора
+        'tags': tags,
+        'categories': categories,  # Добавили категории
     }
     return render(request, 'segmentation/edit_sequence.html', context)
-
 def get_masks(request):
     frame_id = request.GET.get('frame_id')
     frame = get_object_or_404(FrameSequence, id=frame_id)
@@ -57,6 +68,7 @@ def get_masks(request):
         'id': mask.id,
         'mask_file': mask.mask_file.url,
         'tag': mask.tag.name if mask.tag else 'No tag',
+        'id_tag': mask.tag.id if mask.id else 'No tag id',
         'color': mask.mask_color
     } for mask in masks]
 

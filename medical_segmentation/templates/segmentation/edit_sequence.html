@@ -72,33 +72,55 @@
         
         <!-- Блок с информацией и выбором параметров -->
         <div class="modal-info">
-            <label for="modalFileName">{% trans "Sequence number" %}:</label>
-            <h6 id="modalFileName"></h6>
+            <div class="d-flex align-items-center mb-3">
+                <label for="modalFileName" class="form-label fw-bold me-2">
+                    {% trans "Sequence number" %}:
+                </label>
+                <h6 id="modalFileName" class="text-muted mb-0"></h6>
+            </div>
             
             <!-- Селекторы для тегов и цвета -->
-            <div class="d-flex align-items-center mb-3">
-                <div class="me-3">
-                    <label for="tagSelect">{% trans "Select Tag" %}:</label>
-                    <select id="tagSelect" class="form-control">
-                        {% for tag in tags %}
-                            <option value="{{ tag.id }}">{{ tag.name }}</option>
+            <div class="row g-3 align-items-center mb-3">
+                <!-- Селектор категории тега -->
+                <div class="col-md-6">
+                    <label for="categorySelect" class="form-label fw-bold">{% trans "Select Category" %}:</label>
+                    <select id="categorySelect" class="form-select">
+                        <option value="">{% trans "Choose Category" %}</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.tags_category }}</option>
                         {% endfor %}
                     </select>
+                </div>                
+                <!-- Селектор тега -->
+                <div class="col-md-6">
+                    <label for="tagSelect" class="form-label fw-bold">{% trans "Select Tag" %}:</label>
+                    <select id="tagSelect" class="form-select">
+                        <option value="">{% trans "Choose Tag" %}</option>
+                    </select>
                 </div>
-                <div>
-                    <label for="colorSelect">{% trans "Mask Color" %}:</label>
-                    <input type="color" id="colorSelect" class="form-control" value="#00FF00">
+            
+                <!-- Селектор цвета -->
+                <div class="col-md-6">
+                    <label for="colorSelect" class="form-label fw-bold">{% trans "Mask Color" %}:</label>
+                    <input type="color" id="colorSelect" class="form-control form-control-color" value="#00FF00" title="{% trans 'Choose mask color' %}">
                 </div>
             </div>
+            
             
             
             <!-- Блок для списка масок -->
-            <div id="maskContainer" class="mask-container">
-                <h6>{% trans "Available Masks" %}</h6>
-                <div id="maskList" class="mask-list">
-                    <!-- Список масок будет динамически добавляться сюда -->
+            <div id="maskContainer" class="mb-3">
+                <h6 class="fw-bold mb-3">{% trans "Available Masks" %}</h6>
+            
+                <!-- Список масок -->
+                <div id="maskList" class="list-group">
+                    <!-- Пример динамически добавленного элемента -->
+                    <!-- <div class="list-group-item d-flex justify-content-between align-items-center">
+                         <span>Mask Name</span>
+                         <button class="btn btn-sm btn-outline-danger">{% trans "Remove" %}</button>
+                    </div> -->
                 </div>
-            </div>
+            </div>            
 
             <div>
                 <button id="extrapolateBtn" class="btn btn-primary mt-3">{% trans "Create mask for all frames" %}</button>
@@ -262,6 +284,7 @@
         const extrapolateBtn = document.getElementById('extrapolateBtn');
         const maskListContainer = document.getElementById('maskList');  // Контейнер для списка масок
         const deleteFramesBtn = document.getElementById('deleteFramesBtn'); // Найдем кнопку Delete
+        const categorySelect = document.getElementById('categorySelect');
         let activeFrameId = null;
 
     deleteFramesBtn.addEventListener('click', () => {
@@ -338,8 +361,6 @@ let canvasWidth, canvasHeight, imageWidth, imageHeight;
 maskCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function deleteMask(maskId, deleteAll = false) {
-    console.log(`Deleting ${deleteAll ? 'all following masks' : 'mask'} with ID: ${maskId}`);
-
     // Формируем URL с параметрами запроса
     const url = new URL(`/delete_mask/`, window.location.origin);
     url.searchParams.append('mask_id', maskId);
@@ -352,10 +373,10 @@ function deleteMask(maskId, deleteAll = false) {
             if (data.status === 'success') {
                 console.log(data.message);
 
-                // Удаляем из DOM только те маски, которые были удалены на сервере
+                // Удаляем из DOM маски с соответствующими ID
                 data.deleted_ids.forEach(id => {
-                    document.querySelectorAll(`input[data-mask-id="${id}"]`).forEach(input => {
-                        input.closest('.mask-item').remove();
+                    document.querySelectorAll(`[data-mask-id="${id}"]`).forEach(maskItem => {
+                        maskItem.remove();  // Удаляем элемент напрямую
                     });
                 });
             } else {
@@ -364,6 +385,28 @@ function deleteMask(maskId, deleteAll = false) {
         })
         .catch(error => console.error('Error deleting mask:', error));
 }
+
+categorySelect.addEventListener('change', function () {
+    const categoryId = this.value;
+
+    // Очищаем текущие теги
+    tagSelect.innerHTML = '<option value="">{% trans "Choose Tag" %}</option>';
+
+    if (categoryId) {
+        // Выполняем AJAX-запрос к серверу для получения тегов
+        fetch(`/get-tags/?category_id=${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag.id;
+                    option.textContent = tag.name;
+                    tagSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching tags:', error));
+    }
+});
 
 // Открытие модального окна
 function showModal(frameId, frameUrl, frameName) {
@@ -391,56 +434,81 @@ function showModal(frameId, frameUrl, frameName) {
                 imageHeight = data.height;
                 console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
 
-                // Загрузка всех масок для текущего кадра
-                fetch(`/get_masks/?frame_id=${frameId}`)
-                    .then(response => response.json())
-                    .then(masks => {
-                        console.log('Masks loaded:', masks);
-                        // Добавляем маски в список выбора
-                        masks.forEach((mask, index) => {  // Добавляем index в forEach
-                            const maskItem = document.createElement('div');
-                            maskItem.classList.add('mask-item');
-                        
-                            // Чекбокс для включения/выключения маски
-                            const maskCheckbox = document.createElement('input');
-                            maskCheckbox.type = 'checkbox';
-                            maskCheckbox.dataset.maskId = mask.id;
-                            maskCheckbox.dataset.maskUrl = mask.mask_file;  // Сохраняем URL маски
-                            maskCheckbox.checked = true;  // По умолчанию все маски включены
-                            maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
-                        
-                            // Элемент для отображения названия маски
-                            const maskLabel = document.createElement('label');
-                            maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
-                        
-                            // Кнопка удаления только текущей маски
-                            const deleteButton = document.createElement('button');
-                            deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'ms-2');
-                            deleteButton.textContent = 'Delete';
-                            deleteButton.addEventListener('click', () => deleteMask(mask.id));
-                        
-                            // Кнопка удаления текущей и всех последующих масок
-                            const deleteAllButton = document.createElement('button');
-                            deleteAllButton.classList.add('btn', 'btn-sm', 'btn-warning', 'ms-2');
-                            deleteAllButton.textContent = 'Delete All Following';
-                        
-                            // Теперь передаём корректный index в функцию удаления
-                            deleteAllButton.addEventListener('click', () => {
-                                deleteMask(mask.id, true, masks);  // Удаляем текущую и все последующие маски с таким же тегом
-                            });                            
-                        
-                            // Добавляем элементы в DOM
-                            maskItem.appendChild(maskCheckbox);
-                            maskItem.appendChild(maskLabel);
-                            maskItem.appendChild(deleteButton);
-                            maskItem.appendChild(deleteAllButton);
-                            maskListContainer.appendChild(maskItem);
-                        
-                            // Отрисовываем маску на canvas
-                            drawMask(mask.mask_file);
+// Загрузка всех масок для текущего кадра
+fetch(`/get_masks/?frame_id=${frameId}`)
+    .then(response => response.json())
+    .then(masks => {
+        console.log('Masks loaded:', masks);
+
+        // Очищаем контейнер перед добавлением масок
+        maskListContainer.innerHTML = '';
+
+        // Добавляем маски в список выбора
+        masks.forEach((mask, index) => {
+            const maskItem = document.createElement('div');
+            maskItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'p-2');
+            maskItem.dataset.maskId = mask.id;
+
+            // Чекбокс для включения/выключения маски
+            const maskCheckbox = document.createElement('input');
+            maskCheckbox.type = 'checkbox';
+            maskCheckbox.dataset.maskId = mask.id;
+            maskCheckbox.dataset.maskUrl = mask.mask_file; // Сохраняем URL маски
+            maskCheckbox.checked = true; // По умолчанию все маски включены
+            maskCheckbox.classList.add('form-check-input', 'me-3'); // Bootstrap class for styling
+            maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
+
+            // Квадратик с цветом маски
+            const colorSquare = document.createElement('span');
+            colorSquare.style.backgroundColor = mask.color || '#000000'; // Используем цвет или чёрный по умолчанию
+            colorSquare.classList.add('mask-color-square', 'me-2');
+            colorSquare.style.width = '16px';
+            colorSquare.style.height = '16px';
+            colorSquare.style.borderRadius = '4px';
+            colorSquare.style.border = '1px solid #ddd';
+
+            // Элемент для отображения названия маски
+            const maskLabel = document.createElement('span');
+            maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
+            maskLabel.classList.add('me-auto'); // Располагает текст до кнопок справа
+
+            // Кнопка удаления текущей маски
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'ms-2');
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', () => deleteMask(mask.id));
+
+            // Кнопка удаления текущей и всех последующих масок
+            const deleteAllButton = document.createElement('button');
+            deleteAllButton.classList.add('btn', 'btn-sm', 'btn-warning', 'ms-2');
+            deleteAllButton.textContent = 'Delete All Following';
+            deleteAllButton.addEventListener('click', () => {
+                deleteMask(mask.id, true, masks);
+            });
+
+            // Добавляем элементы в DOM
+            maskItem.appendChild(maskCheckbox);
+            maskItem.appendChild(colorSquare);
+            maskItem.appendChild(maskLabel);
+            maskItem.appendChild(deleteButton);
+            maskItem.appendChild(deleteAllButton);
+            maskListContainer.appendChild(maskItem);
+
+                        // **Добавляем обработчик клика на элемент списка**
+                        maskItem.addEventListener('click', () => {
+                            // Устанавливаем цвет в input#colorSelect
+                            document.getElementById('colorSelect').value = mask.color;
+            
+                            // Устанавливаем тег в select#tagSelect
+                            const tagSelect = document.getElementById('tagSelect');
+                            tagSelect.value = mask.id_tag;  // Предполагаем, что передаётся id_tag
                         });
-                        
-                    });
+
+            // Отрисовываем маску на canvas
+            drawMask(mask.mask_file);
+        });
+    });
+
             });
     }, 100);
 }
