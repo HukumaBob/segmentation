@@ -412,21 +412,22 @@ categorySelect.addEventListener('change', function () {
 function showModal(frameId, frameUrl, frameName) {
     modal.style.display = 'block';
     modalImage.src = frameUrl;
-    // Update the modal's filename text content
+
+    // Обновляем имя файла в модальном окне
     modalFileName.textContent = frameName.split('/').pop().split('.')[0];
     activeFrameId = frameId;
     maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
-    
+
     setTimeout(() => {
+        // Устанавливаем размер canvas
         canvasWidth = modalImage.clientWidth;
         canvasHeight = modalImage.clientHeight;
         maskCanvas.width = canvasWidth;
         maskCanvas.height = canvasHeight;
         ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         points = [];  // Очищаем точки при открытии нового кадра
-        console.log(`Canvas size set: ${maskCanvas.width}x${maskCanvas.height}`);
 
-        // Загрузка размеров изображения на сервере
+        // Получаем размеры изображения с сервера
         fetch(`/get_image_size/?frame_id=${frameId}`)
             .then(response => response.json())
             .then(data => {
@@ -434,125 +435,70 @@ function showModal(frameId, frameUrl, frameName) {
                 imageHeight = data.height;
                 console.log(`Image size on server: ${imageWidth}x${imageHeight}`);
 
-// Загрузка всех масок для текущего кадра
-fetch(`/get_masks/?frame_id=${frameId}`)
-    .then(response => response.json())
-    .then(masks => {
-        console.log('Masks loaded:', masks);
+                // Загружаем все маски для текущего кадра
+                fetch(`/get_masks/?frame_id=${frameId}`)
+                    .then(response => response.json())
+                    .then(masks => {
+                        console.log('Masks loaded:', masks);
 
-        // Очищаем контейнер перед добавлением масок
-        maskListContainer.innerHTML = '';
+                        // Очищаем контейнер перед добавлением масок
+                        maskListContainer.innerHTML = '';
 
-        // Добавляем маски в список выбора
-        masks.forEach((mask, index) => {
-            const maskItem = document.createElement('div');
-            maskItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'p-2');
-            maskItem.dataset.maskId = mask.id;
-
-            // Чекбокс для включения/выключения маски
-            const maskCheckbox = document.createElement('input');
-            maskCheckbox.type = 'checkbox';
-            maskCheckbox.dataset.maskId = mask.id;
-            maskCheckbox.dataset.maskUrl = mask.mask_file; // Сохраняем URL маски
-            maskCheckbox.checked = true; // По умолчанию все маски включены
-            maskCheckbox.classList.add('form-check-input', 'me-3'); // Bootstrap class for styling
-            maskCheckbox.addEventListener('change', () => toggleMask(mask.id, mask.mask_file));
-
-            // Квадратик с цветом маски
-            const colorSquare = document.createElement('span');
-            colorSquare.style.backgroundColor = mask.color || '#000000'; // Используем цвет или чёрный по умолчанию
-            colorSquare.classList.add('mask-color-square', 'me-2');
-            colorSquare.style.width = '16px';
-            colorSquare.style.height = '16px';
-            colorSquare.style.borderRadius = '4px';
-            colorSquare.style.border = '1px solid #ddd';
-
-            // Элемент для отображения названия маски
-            const maskLabel = document.createElement('span');
-            maskLabel.textContent = `Mask ID: ${mask.id} (Tag: ${mask.tag})`;
-            maskLabel.classList.add('me-auto'); // Располагает текст до кнопок справа
-
-            // Кнопка удаления текущей маски
-            const deleteButton = document.createElement('button');
-            deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'ms-2');
-            deleteButton.textContent = 'Delete';
-            deleteButton.addEventListener('click', () => deleteMask(mask.id));
-
-            // Кнопка удаления текущей и всех последующих масок
-            const deleteAllButton = document.createElement('button');
-            deleteAllButton.classList.add('btn', 'btn-sm', 'btn-warning', 'ms-2');
-            deleteAllButton.textContent = 'Delete All Following';
-            deleteAllButton.addEventListener('click', () => {
-                deleteMask(mask.id, true, masks);
-            });
-
-            // Добавляем элементы в DOM
-            maskItem.appendChild(maskCheckbox);
-            maskItem.appendChild(colorSquare);
-            maskItem.appendChild(maskLabel);
-            maskItem.appendChild(deleteButton);
-            maskItem.appendChild(deleteAllButton);
-            maskListContainer.appendChild(maskItem);
-
-                        // **Добавляем обработчик клика на элемент списка**
-                        maskItem.addEventListener('click', () => {
-                            // Устанавливаем цвет в input#colorSelect
-                            document.getElementById('colorSelect').value = mask.color;
-            
-                            // Устанавливаем тег в select#tagSelect
-                            const tagSelect = document.getElementById('tagSelect');
-                            tagSelect.value = mask.id_tag;  // Предполагаем, что передаётся id_tag
+                        // Добавляем каждую маску в список и отрисовываем её на canvas
+                        masks.forEach(mask => {
+                            addMaskToList(
+                                mask.id, 
+                                mask.color, 
+                                `Mask ID: ${mask.id} (Tag: ${mask.tag})`, 
+                                mask.mask_file
+                            );
+                            drawMask(mask.mask_file, mask.id, mask.color, mask.tag);  // Отрисовываем маску на canvas
                         });
-
-            // Отрисовываем маску на canvas
-            drawMask(mask.mask_file);
-        });
-    });
-
+                    });
             });
     }, 100);
 }
         
         
-        extrapolateBtn.addEventListener('click', () => {
-            const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
-            if (activeFrameId) {
-                // Выводим текущий активный ID кадра перед отправкой запроса
-                console.log(`Extrapolation started for frame ID: ${activeFrameId}`);
-    
-                // Отправляем запрос на экстраполяцию с указанием текущего кадра
-                fetch(`/${currentLang }/extrapolate_masks/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({
-                        sequence_id: {{ sequence.id }},
-                        tag_id: tagSelect.value,
-                        mask_color: colorSelect.value,
-                        current_frame_id: activeFrameId,
-                        points: transformedPoints,
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Server responded with status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Extrapolation completed:', data);
-                    alert('Extrapolation completed successfully!');
-                })
-                .catch(error => {
-                    console.error('Error during extrapolation:', error);
-                    alert('Error occurred during extrapolation.');
-                });
-            } else {
-                console.error('No active frame selected for extrapolation');
-            }
-        });
+extrapolateBtn.addEventListener('click', () => {
+const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
+if (activeFrameId) {
+    // Выводим текущий активный ID кадра перед отправкой запроса
+    console.log(`Extrapolation started for frame ID: ${activeFrameId}`);
+
+    // Отправляем запрос на экстраполяцию с указанием текущего кадра
+    fetch(`/${currentLang }/extrapolate_masks/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            sequence_id: {{ sequence.id }},
+            tag_id: tagSelect.value,
+            mask_color: colorSelect.value,
+            current_frame_id: activeFrameId,
+            points: transformedPoints,
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Extrapolation completed:', data);
+        alert('Extrapolation completed successfully!');
+    })
+    .catch(error => {
+        console.error('Error during extrapolation:', error);
+        alert('Error occurred during extrapolation.');
+    });
+} else {
+    console.error('No active frame selected for extrapolation');
+}
+});
         // Закрытие модального окна
         function closeModal() {
             modal.style.display = 'none';
@@ -641,6 +587,7 @@ fetch(`/get_masks/?frame_id=${frameId}`)
                 
                 // Получаем текущий выбранный тег
                 const selectedTagId = tagSelect.value;
+                const selectedTagName = tagSelect.options[tagSelect.selectedIndex].text;
                 
                 // Получаем выбранный цвет маски из input
                 const selectedMaskColor = colorSelect.value;
@@ -675,22 +622,99 @@ fetch(`/get_masks/?frame_id=${frameId}`)
                             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
                             ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
                             drawPoints();  // Отрисовка точек поверх маски
+                            addMaskToList(data.mask_id, selectedMaskColor, selectedTagName, data.mask_url)
                         };
                     }
                 })
                 .catch(error => console.error('Error during fetch:', error));
             }
         }
+
+        function addMaskToList(maskId, maskColor, maskTagName, maskFileUrl) {
+            const maskList = document.getElementById('maskList');  // Контейнер списка масок
         
-    // Функция для отображения выбранной маски на canvas
-    function drawMask(maskUrl) {
-        const img = new Image();
-        console.log(`Drawing mask from URL: ${maskUrl}`);
-        img.src = `${maskUrl}?timestamp=${new Date().getTime()}`;
-        img.onload = () => {
-            ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
-        };
+            // Проверяем, существует ли элемент с таким mask_id в DOM
+            if (!document.querySelector(`[data-mask-id="${maskId}"]`)) {
+                // Создаём новый элемент маски
+                const maskItem = document.createElement('div');
+                maskItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'p-2');
+                maskItem.setAttribute('data-mask-id', maskId);
+        
+                // Квадратик с цветом маски
+                const colorSquare = document.createElement('span');
+                colorSquare.classList.add('mask-color-square', 'me-2');
+                colorSquare.style.backgroundColor = maskColor || '#000000';  // Цвет маски или чёрный по умолчанию
+                colorSquare.style.width = '16px';
+                colorSquare.style.height = '16px';
+                colorSquare.style.borderRadius = '4px';
+                colorSquare.style.border = '1px solid #ddd';
+        
+                // Название маски
+                const maskLabel = document.createElement('span');
+                maskLabel.textContent = maskTagName;
+                maskLabel.classList.add('me-auto');  // Располагаем текст до кнопок справа
+        
+                // Кнопка удаления маски
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('btn', 'btn-sm', 'btn-outline-danger', 'ms-2');
+                deleteButton.textContent = 'Remove';
+                deleteButton.addEventListener('click', () => deleteMask(maskId));
+        
+                // Кнопка удаления текущей и последующих масок
+                const deleteAllButton = document.createElement('button');
+                deleteAllButton.classList.add('btn', 'btn-sm', 'btn-warning', 'ms-2');
+                deleteAllButton.textContent = 'Delete All Following';
+                deleteAllButton.addEventListener('click', () => deleteMask(maskId, true));
+        
+                // Добавляем элементы в маску
+                maskItem.appendChild(colorSquare);
+                maskItem.appendChild(maskLabel);
+                maskItem.appendChild(deleteButton);
+                maskItem.appendChild(deleteAllButton);
+        
+                // Добавляем маску в список
+                maskList.appendChild(maskItem);
+        
+                // Обработчик клика на маске для отображения её на canvas
+                maskItem.addEventListener('click', () => {
+                    document.getElementById('colorSelect').value = maskColor;  // Устанавливаем цвет
+                    const tagSelect = document.getElementById('tagSelect');
+                    tagSelect.value = maskId;  // Устанавливаем выбранный тег (по ID)
+                    drawMask(maskFileUrl);  // Отрисовываем маску на canvas
+                });
+            }
+        }
+                
+    function addTagToSelect(maskId, maskTagName) {
+        const tagSelect = document.getElementById('tagSelect');
+    
+        // Проверяем, есть ли уже этот тег в списке
+        if (!Array.from(tagSelect.options).some(option => option.value === maskId.toString())) {
+            // Создаём новый элемент <option>
+            const newOption = document.createElement('option');
+            newOption.value = maskId;
+            newOption.textContent = maskTagName;
+    
+            // Добавляем новый тег в <select>
+            tagSelect.appendChild(newOption);
+        }
     }
+        
+// Функция для отображения выбранной маски на canvas
+function drawMask(maskUrl, maskId, maskColor, maskTagName) {
+
+    const img = new Image();
+    console.log(`Drawing mask from URL: ${maskUrl}`);
+    img.src = `${maskUrl}?timestamp=${new Date().getTime()}`;
+    img.onload = () => {
+        // Рисуем маску на canvas
+        ctx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
+
+        // Добавляем маску в список тегов
+        addTagToSelect(maskId, maskTagName);
+    };
+}
+
 
     // Функция для включения/выключения масок
     function toggleMask(maskId, maskUrl) {
@@ -710,7 +734,8 @@ fetch(`/get_masks/?frame_id=${frameId}`)
         }
     }
 
-    // Загружаем маски для всех кадров при первой загрузке страницы
+// Загружаем маски для всех кадров при первой загрузке страницы
+function loadAllMasks() {
     frameCards.forEach(card => {
         const frameId = card.dataset.frameId;
         const canvas = document.getElementById(`canvas-${frameId}`);
@@ -718,27 +743,18 @@ fetch(`/get_masks/?frame_id=${frameId}`)
 
         // Загружаем маски для этого кадра
         loadMasks(frameId, ctx, canvas);
-
-        // Устанавливаем обработчик для открытия модального окна
-        card.addEventListener('click', (event) => {
-            if (event.target.classList.contains('delete-checkbox')) return;
-
-            const frameUrl = card.dataset.frameUrl;
-            const frameName = card.dataset.frameName;
-
-            // Показ модального окна с кадром
-            showModal(frameId, frameUrl, frameName);
-
-            event.stopPropagation();
-        });
     });
+}
+
+// Инициализация загрузки масок при первой загрузке страницы
+loadAllMasks();
 
     // Функция для загрузки масок для указанного кадра
     function loadMasks(frameId, ctx, canvas) {
         fetch(`/get_masks/?frame_id=${frameId}`)
             .then(response => response.json())
             .then(masks => {
-                {% comment %} ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas {% endcomment %}
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas
                 masks.forEach(mask => {
                     drawMaskOnCanvas(ctx, mask.mask_file, canvas);
                 });
@@ -751,7 +767,7 @@ fetch(`/get_masks/?frame_id=${frameId}`)
         const img = new Image();
         img.src = `${maskUrl}?timestamp=${new Date().getTime()}`; // Кэширование
         img.onload = () => {
-            {% comment %} ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas перед отрисовкой {% endcomment %}
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas перед отрисовкой
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Отрисовываем маску
         };
     }
