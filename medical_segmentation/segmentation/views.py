@@ -179,7 +179,10 @@ def generate_mask(request):
             # Сохранение или обновление записи маски в БД
             mask_record = save_or_update_mask_record(frame, tag, mask_color, mask_path)
 
-            return JsonResponse({'mask_url': f"{settings.MEDIA_URL}{mask_record.mask_file}"})
+            return JsonResponse({
+                'mask_url': f"{settings.MEDIA_URL}{mask_record.mask_file}",
+                'mask_id':mask_record.id
+                })
 
         except Exception as e:
             print(f"Error: {e}")
