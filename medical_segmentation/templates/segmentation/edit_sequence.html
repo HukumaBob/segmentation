@@ -749,6 +749,23 @@ function loadAllMasks() {
 // Инициализация загрузки масок при первой загрузке страницы
 loadAllMasks();
 
+// Устанавливаем обработчики событий для каждой карточки кадра
+frameCards.forEach(card => {
+    const frameId = card.dataset.frameId;
+
+    card.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-checkbox')) return;
+
+        const frameUrl = card.dataset.frameUrl;
+        const frameName = card.dataset.frameName;
+
+        // Показ модального окна с кадром
+        showModal(frameId, frameUrl, frameName);
+
+        event.stopPropagation();
+    });
+});
+
     // Функция для загрузки масок для указанного кадра
     function loadMasks(frameId, ctx, canvas) {
         fetch(`/get_masks/?frame_id=${frameId}`)
@@ -772,12 +789,19 @@ loadAllMasks();
         };
     }
 
-        closeButton.addEventListener('click', closeModal);
-        window.addEventListener('click', (event) => {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
+    // Обработчик закрытия модального окна
+    closeButton.addEventListener('click', () => {
+        closeModal();
+        location.reload();  // Перезагружаем страницу
+    });
+
+    // Закрытие модального окна при клике вне него
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+            location.reload();  // Перезагружаем страницу
+        }
+    });    
     });
 </script>
 
