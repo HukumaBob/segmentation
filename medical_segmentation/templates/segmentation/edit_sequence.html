@@ -57,8 +57,6 @@
             {% endfor %}
         </div>
     </div>
-
-
 <!-- Модальное окно -->
 <div id="frameModal" class="modal">
     <div class="modal-content">
@@ -122,14 +120,23 @@
                 </div>
             </div>            
 
-            <div>
-                <button id="extrapolateBtn" class="btn btn-primary mt-3">{% trans "Create mask for all frames" %}</button>
+            <div class="d-flex align-items-center gap-2 mt-3">
+                <!-- Кнопка экстраполяции масок -->
+                <button id="extrapolateBtn" class="btn btn-primary">
+                    {% trans "Create mask for all frames" %}
+                </button>
+            
+                <!-- Чекбокс для вычитания -->
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="subtractMaskCheckbox">
+                    <label class="form-check-label" for="subtractMaskCheckbox">
+                        {% trans "Subtract from existing masks" %}
+                    </label>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-
+</div>    
 <style>
     /* Тёмная тема */
     body.dark-mode .modal-content {
@@ -459,46 +466,48 @@ function showModal(frameId, frameUrl, frameName) {
     }, 100);
 }
         
-        
 extrapolateBtn.addEventListener('click', () => {
-const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
-if (activeFrameId) {
-    // Выводим текущий активный ID кадра перед отправкой запроса
-    console.log(`Extrapolation started for frame ID: ${activeFrameId}`);
+    const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
+    const subtractMask = document.getElementById('subtractMaskCheckbox').checked;  // Получаем состояние чекбокса
 
-    // Отправляем запрос на экстраполяцию с указанием текущего кадра
-    fetch(`/${currentLang }/extrapolate_masks/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            sequence_id: {{ sequence.id }},
-            tag_id: tagSelect.value,
-            mask_color: colorSelect.value,
-            current_frame_id: activeFrameId,
-            points: transformedPoints,
+    if (activeFrameId) {
+        console.log(`Extrapolation started for frame ID: ${activeFrameId}`);
+
+        fetch(`/${currentLang}/extrapolate_masks/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                sequence_id: {{ sequence.id }},
+                tag_id: tagSelect.value,
+                mask_color: colorSelect.value,
+                current_frame_id: activeFrameId,
+                points: transformedPoints,
+                subtraction: subtractMask  // Передаём флаг вычитания
+            })
         })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Extrapolation completed:', data);
-        alert('Extrapolation completed successfully!');
-    })
-    .catch(error => {
-        console.error('Error during extrapolation:', error);
-        alert('Error occurred during extrapolation.');
-    });
-} else {
-    console.error('No active frame selected for extrapolation');
-}
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Extrapolation completed:', data);
+            alert('Extrapolation completed successfully!');
+            location.reload();  // Перезагружаем страницу после успеха
+        })
+        .catch(error => {
+            console.error('Error during extrapolation:', error);
+            alert('Error occurred during extrapolation.');
+        });
+    } else {
+        console.error('No active frame selected for extrapolation');
+    }
 });
+
         // Закрытие модального окна
         function closeModal() {
             modal.style.display = 'none';
