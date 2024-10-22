@@ -10,7 +10,7 @@ from django.conf import settings
 from .models import FrameSequence, Mask
 from data_preparation.models import Sequences, Tag, TagsCategory
 from .utils import (
-    generate_mask_filename, save_mask_image, save_or_update_mask_record, subtract_existing_masks
+    generate_mask_filename, save_mask_image, save_or_update_mask_record, subtract_new_masks_from_existing
 )
 import torch
 from sam2.build_sam import build_sam2_video_predictor
@@ -274,37 +274,11 @@ def extrapolate_masks(request):
                     # Обновляем или создаём запись маски в БД
                     save_or_update_mask_record(frame, tag, mask_color, mask_path)
 
-                # Теперь загружаем все старые маски из БД и модифицируем их
-                existing_masks = Mask.objects.filter(frame_sequence=frame).exclude(tag=tag)  # Исключаем только что созданную маску
-
-                for mask_record in existing_masks:
-                    old_mask_path = os.path.join(settings.MEDIA_ROOT, mask_record.mask_file.name)
-
-                    if os.path.exists(old_mask_path):
-                        print(f"Loading existing mask: {old_mask_path}")
-                        old_mask = Image.open(old_mask_path).convert("L")
-                        old_mask_array = np.array(old_mask) > 0
-
-                        # Вычитаем новую маску из старой
-                        for obj_id, new_mask_array in segments.items():
-                            print(f"Subtracting new mask from existing mask for frame {frame.id}")
-                            old_mask_array = np.where(new_mask_array, 0, old_mask_array)
-
-                        # Проверяем, что итоговая маска не пустая
-                        if not old_mask_array.any():
-                            print(f"Warning: Mask for frame {frame.id} is empty after subtraction.")
-
-                        # Удаляем старую маску перед сохранением
-                        print(f"Deleting old mask: {old_mask_path}")
-                        os.remove(old_mask_path)
-
-                        # Сохраняем изменённую старую маску на диск
-                        frame_width, frame_height = old_mask_array.shape[::-1]
-                        print(f"Saving modified mask at: {old_mask_path}")
-                        save_mask_image(old_mask_array, mask_record.mask_color, frame_width, frame_height, old_mask_path)
-
-                        # Обновляем запись маски в БД
-                        save_or_update_mask_record(frame, mask_record.tag, mask_record.mask_color, old_mask_path)
+                # Если флаг subtraction включён, выполняем вычитание
+                if subtraction:
+                    print(f"Subtracting new masks from existing masks for frame {frame.id}")
+                    existing_masks = Mask.objects.filter(frame_sequence=frame).exclude(tag=tag)  # Старые маски
+                    subtract_new_masks_from_existing(existing_masks, segments)
 
             return JsonResponse({'status': 'Extrapolation completed successfully'})
 
