@@ -164,7 +164,7 @@ def generate_mask(request):
 
             # Если subtraction=True, вычитаем текущую маску из существующих масок
             if subtraction:
-                current_mask = subtract_existing_masks(frame, current_mask)
+                current_mask = subtract_new_masks_from_existing(frame, current_mask)
 
             mask_dir = os.path.join(frame_dir, "mask")
             os.makedirs(mask_dir, exist_ok=True)
