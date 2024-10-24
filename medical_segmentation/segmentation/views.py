@@ -5,12 +5,13 @@ from PIL import Image
 from django.http import HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.conf import settings
 
 from .models import FrameSequence, Mask
 from data_preparation.models import Sequences, Tag, TagsCategory
 from .utils import (
-    generate_mask_filename, save_mask_image, save_or_update_mask_record, subtract_new_masks_from_existing
+    generate_mask_filename, load_mask_as_array, save_mask_image, save_or_update_mask_record, subtract_mask_from_mask, subtract_new_masks_from_existing
 )
 import torch
 from sam2.build_sam import build_sam2_video_predictor
@@ -327,3 +328,54 @@ def delete_masks_for_frame(frame):
     masks = frame.masks.all()  # Получаем все маски, связанные с кадром
     for mask in masks:
         mask.delete()  # Используем метод delete(), чтобы гарантировать удаление файла
+
+@csrf_exempt  # Уберите, если используете CSRF-токены
+@require_POST
+def extract_masks(request):
+    if request.method == 'POST':    
+        try:
+            data = json.loads(request.body)
+            mask_id = data.get('mask_id')
+            frame_id = data.get('frame_id')
+
+            # Получаем переданную маску и её тег
+            current_mask = Mask.objects.get(id=mask_id)
+            current_tag = current_mask.tag
+
+            # Находим кадр, связанный с переданной маской
+            current_frame = FrameSequence.objects.get(id=frame_id)
+
+            # Получаем все кадры из той же последовательности
+            sequence_frames = FrameSequence.objects.filter(sequences=current_frame.sequences)
+
+            # Проходим по каждому кадру из той же последовательности
+            for frame in sequence_frames:
+                print(f"Processing frame: {frame.id}")
+
+                # Ищем маску в этом кадре с таким же тегом, что и у переданной маски
+                same_tag_mask = Mask.objects.filter(frame_sequence=frame, tag=current_tag).first()
+
+                if same_tag_mask:
+                    print(f"Found mask with the same tag in frame {frame.id}: mask_id={same_tag_mask.id}")
+
+                    # Загружаем маску с таким же тегом как бинарный массив
+                    same_tag_mask_array = load_mask_as_array(same_tag_mask)
+
+                    # Находим все остальные маски этого кадра (кроме той, что с тем же тегом)
+                    other_masks = Mask.objects.filter(frame_sequence=frame).exclude(id=same_tag_mask.id)
+
+                    # Вычитаем маску с тем же тегом из каждой другой маски
+                    for mask in other_masks:
+                        print(f"Subtracting mask {same_tag_mask.id} from mask {mask.id}")
+                        subtract_mask_from_mask(mask, same_tag_mask_array)
+
+            return JsonResponse({'message': 'Вычитание масок успешно выполнено.'}, status=200)
+
+        except Mask.DoesNotExist:
+            return JsonResponse({'error': 'Маска не найдена.'}, status=404)
+        except FrameSequence.DoesNotExist:
+            return JsonResponse({'error': 'Кадр не найден.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+

@@ -75,3 +75,28 @@ def subtract_new_masks_from_existing(existing_masks, new_masks):
             save_or_update_mask_record(mask_record.frame_sequence, mask_record.tag, 
                                        mask_record.mask_color, old_mask_path)
 
+def subtract_mask_from_mask(target_mask, mask_to_subtract_array):
+    """Вычитает одну маску из другой и сохраняет результат на диск."""
+    mask_path = os.path.join(settings.MEDIA_ROOT, target_mask.mask_file.name)
+
+    if os.path.exists(mask_path):
+        # Загружаем маску для вычитания как бинарный массив
+        target_image = Image.open(mask_path).convert("L")
+        target_array = np.array(target_image) > 0
+
+        # Выполняем вычитание: обнуляем пиксели, где есть наложение
+        modified_array = np.where(mask_to_subtract_array, 0, target_array)
+
+        # Сохраняем изменённую маску на диск
+        frame_width, frame_height = modified_array.shape[::-1]
+        save_mask_image(modified_array, target_mask.mask_color, frame_width, frame_height, mask_path)
+            
+def load_mask_as_array(mask):
+    """Загружает маску с диска и конвертирует её в бинарный массив."""
+    mask_path = os.path.join(settings.MEDIA_ROOT, mask.mask_file.name)
+    if os.path.exists(mask_path):
+        print(f"Loading mask from: {mask_path}")
+        mask_image = Image.open(mask_path).convert("L")
+        return np.array(mask_image) > 0  # Преобразуем в бинарный массив
+    else:
+        raise FileNotFoundError(f"Mask file not found: {mask_path}")
