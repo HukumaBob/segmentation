@@ -58,7 +58,7 @@
         </div>
     </div>
 <!-- Модальное окно -->
-<div id="frameModal" class="modal">
+<div id="frameModal" class="modal" data-frame-id="">
     <div class="modal-content">
         <span class="close-btn">&times;</span>
         
@@ -419,6 +419,7 @@ categorySelect.addEventListener('change', function () {
 function showModal(frameId, frameUrl, frameName) {
     modal.style.display = 'block';
     modalImage.src = frameUrl;
+    modal.dataset.frameId = frameId;
 
     // Обновляем имя файла в модальном окне
     modalFileName.textContent = frameName.split('/').pop().split('.')[0];
@@ -465,7 +466,13 @@ function showModal(frameId, frameUrl, frameName) {
             });
     }, 100);
 }
-        
+
+// Получение frame_id из модального окна в других местах кода
+function getActiveFrameId() {
+    const modal = document.getElementById('frameModal');
+    return modal.dataset.frameId;  // Возвращаем frame_id
+}
+
 extrapolateBtn.addEventListener('click', () => {
     const transformedPoints = transformPoints(points, canvasWidth, canvasHeight, imageWidth, imageHeight);
     const subtractMask = document.getElementById('subtractMaskCheckbox').checked;  // Получаем состояние чекбокса
@@ -675,11 +682,18 @@ extrapolateBtn.addEventListener('click', () => {
                 deleteAllButton.textContent = 'Delete All Following';
                 deleteAllButton.addEventListener('click', () => deleteMask(maskId, true));
         
+                // Кнопка "Extract from other masks"
+                const extractButton = document.createElement('button');
+                extractButton.classList.add('btn', 'btn-sm', 'btn-info', 'ms-2');
+                extractButton.textContent = 'Extract from other masks';
+                extractButton.addEventListener('click', () => extractMask(maskId));
+        
                 // Добавляем элементы в маску
                 maskItem.appendChild(colorSquare);
                 maskItem.appendChild(maskLabel);
                 maskItem.appendChild(deleteButton);
                 maskItem.appendChild(deleteAllButton);
+                maskItem.appendChild(extractButton);
         
                 // Добавляем маску в список
                 maskList.appendChild(maskItem);
@@ -689,11 +703,36 @@ extrapolateBtn.addEventListener('click', () => {
                     document.getElementById('colorSelect').value = maskColor;  // Устанавливаем цвет
                     const tagSelect = document.getElementById('tagSelect');
                     tagSelect.value = maskId;  // Устанавливаем выбранный тег (по ID)
-                    drawMask(maskFileUrl);  // Отрисовываем маску на canvas
+                    drawMask(maskFileUrl, maskId);  // Отрисовываем маску на canvas
                 });
             }
         }
-                
+
+// Функция вычитания маски из других связанных масок
+async function extractMask(maskId) {
+    try {
+        const frameId = getActiveFrameId();
+
+        const response = await fetch('/en/api/masks/extract/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),  // Если используете CSRF
+            },
+            body: JSON.stringify({ mask_id: maskId, frame_id: frameId }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ошибка: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        alert(`Успешно: ${data.message}`);
+    } catch (error) {
+        console.error('Ошибка при вычитании маски:', error);
+        alert('Произошла ошибка при вычитании маски.');
+    }
+}
     function addTagToSelect(maskId, maskTagName) {
         const tagSelect = document.getElementById('tagSelect');
     
@@ -730,7 +769,7 @@ function drawMask(maskUrl, maskId, maskColor, maskTagName) {
         const maskCheckbox = document.querySelector(`[data-mask-id="${maskId}"]`);
         if (maskCheckbox.checked) {
 
-            drawMask(maskUrl);  // Включение маски
+            drawMask(maskUrl, maskId);  // Включение маски
         } else {
             // Удаление маски из canvas
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);  // Очищаем все
@@ -738,7 +777,7 @@ function drawMask(maskUrl, maskId, maskColor, maskTagName) {
             document.querySelectorAll('.mask-item input:checked').forEach(checkbox => {
                 const activeMaskId = checkbox.dataset.maskId;
                 const activeMaskUrl = checkbox.dataset.maskUrl;
-                drawMask(activeMaskUrl);
+                drawMask(activeMaskUrl, maskId);
             });
         }
     }
@@ -793,7 +832,7 @@ frameCards.forEach(card => {
         const img = new Image();
         img.src = `${maskUrl}?timestamp=${new Date().getTime()}`; // Кэширование
         img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas перед отрисовкой
+            {% comment %} ctx.clearRect(0, 0, canvas.width, canvas.height); // Очищаем canvas перед отрисовкой {% endcomment %}
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Отрисовываем маску
         };
     }

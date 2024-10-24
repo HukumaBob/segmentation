@@ -11,4 +11,5 @@ urlpatterns = [
     path('get_masks/', views.get_masks, name='get_masks'),
     path('delete_frames/', views.delete_frames, name='delete_frames'),
     path('delete_mask/', views.delete_mask, name='delete_mask'),
+    path('api/masks/extract/', views.extract_masks, name='extract_masks'),
 ]
