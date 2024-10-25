@@ -656,6 +656,7 @@ extrapolateBtn.addEventListener('click', () => {
                 maskItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'p-2');
                 maskItem.setAttribute('data-mask-id', maskId);
         
+
                 // Квадратик с цветом маски
                 const colorSquare = document.createElement('span');
                 colorSquare.classList.add('mask-color-square', 'me-2');
@@ -664,6 +665,15 @@ extrapolateBtn.addEventListener('click', () => {
                 colorSquare.style.height = '16px';
                 colorSquare.style.borderRadius = '4px';
                 colorSquare.style.border = '1px solid #ddd';
+                colorSquare.style.cursor = 'pointer';  // Указываем курсор
+
+                // Добавляем обработчик клика только на элемент colorSquare
+                colorSquare.addEventListener('click', () => {
+                    document.getElementById('colorSelect').value = maskColor;  // Устанавливаем цвет
+                    const tagSelect = document.getElementById('tagSelect');
+                    tagSelect.value = maskId;  // Устанавливаем выбранный тег (по ID)
+                    drawMask(maskFileUrl, maskId);  // Отрисовываем маску на canvas
+                });
         
                 // Название маски
                 const maskLabel = document.createElement('span');
@@ -687,24 +697,28 @@ extrapolateBtn.addEventListener('click', () => {
                 extractButton.classList.add('btn', 'btn-sm', 'btn-info', 'ms-2');
                 extractButton.textContent = 'Extract from other masks';
                 extractButton.addEventListener('click', () => extractMask(maskId));
-        
+
+                // Чекбокс для включения/выключения маски
+                const maskCheckbox = document.createElement('input');
+                maskCheckbox.type = 'checkbox';
+                maskCheckbox.setAttribute('data-mask-id', maskId);  // Привязка ID маски
+                maskCheckbox.setAttribute('data-mask-url', maskFileUrl);  // Привязка URL маски
+                maskCheckbox.classList.add('form-check-input', 'me-2');
+                maskCheckbox.checked = true;
+                
+                // Добавляем обработчик изменения состояния чекбокса
+                maskCheckbox.addEventListener('change', () => {
+                    toggleMask(maskId, maskFileUrl);
+                });                
+
                 // Добавляем элементы в маску
+                maskItem.appendChild(maskCheckbox);
                 maskItem.appendChild(colorSquare);
                 maskItem.appendChild(maskLabel);
                 maskItem.appendChild(deleteButton);
                 maskItem.appendChild(deleteAllButton);
                 maskItem.appendChild(extractButton);
-        
-                // Добавляем маску в список
                 maskList.appendChild(maskItem);
-        
-                // Обработчик клика на маске для отображения её на canvas
-                maskItem.addEventListener('click', () => {
-                    document.getElementById('colorSelect').value = maskColor;  // Устанавливаем цвет
-                    const tagSelect = document.getElementById('tagSelect');
-                    tagSelect.value = maskId;  // Устанавливаем выбранный тег (по ID)
-                    drawMask(maskFileUrl, maskId);  // Отрисовываем маску на canvas
-                });
             }
         }
 
@@ -766,21 +780,37 @@ function drawMask(maskUrl, maskId, maskColor, maskTagName) {
 
     // Функция для включения/выключения масок
     function toggleMask(maskId, maskUrl) {
-        const maskCheckbox = document.querySelector(`[data-mask-id="${maskId}"]`);
+        // Получаем элемент чекбокса
+        const maskCheckbox = document.querySelector(`input[data-mask-id="${maskId}"]`);
+    
+        // Проверка на наличие чекбокса и его тип
+        if (!maskCheckbox) {
+            console.error(`Чекбокс с maskId ${maskId} не найден.`);
+            return;
+        }
+        if (maskCheckbox.type !== 'checkbox') {
+            console.error(`Элемент с maskId ${maskId} не является чекбоксом.`);
+            return;
+        }
+    
+        console.log(`Чекбокс найден. Состояние: ${maskCheckbox.checked}`);
+    
+        // Проверяем состояние чекбокса
         if (maskCheckbox.checked) {
-
+            console.log('maskUrl: ', maskUrl, 'maskId: ', maskId);
             drawMask(maskUrl, maskId);  // Включение маски
         } else {
-            // Удаление маски из canvas
-            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);  // Очищаем все
-            // Перерисовываем оставшиеся включенные маски
+            console.log('Удаление маски:', maskId);
+            // Очищаем canvas и перерисовываем оставшиеся маски
+            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
             document.querySelectorAll('.mask-item input:checked').forEach(checkbox => {
                 const activeMaskId = checkbox.dataset.maskId;
                 const activeMaskUrl = checkbox.dataset.maskUrl;
-                drawMask(activeMaskUrl, maskId);
+                drawMask(activeMaskUrl, activeMaskId);
             });
         }
     }
+    
 
 // Загружаем маски для всех кадров при первой загрузке страницы
 function loadAllMasks() {

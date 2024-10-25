@@ -11,8 +11,13 @@ from django.conf import settings
 from .models import FrameSequence, Mask
 from data_preparation.models import Sequences, Tag, TagsCategory
 from .utils import (
-    generate_mask_filename, load_mask_as_array, save_mask_image, save_or_update_mask_record, subtract_mask_from_mask, subtract_new_masks_from_existing
-)
+    generate_mask_filename, 
+    load_mask_as_array, 
+    save_mask_image, 
+    save_or_update_mask_record, 
+    subtract_mask_from_mask, 
+    subtract_new_masks_from_existing
+    )
 import torch
 from sam2.build_sam import build_sam2_video_predictor
 
