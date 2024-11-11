@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'segmentation',
     'data_preparation',
+    'nettrain',
 ]
 
 MIDDLEWARE = [
