@@ -17,11 +17,22 @@ class FrameSequence(models.Model):
         return f"Кадр из последовательности {self.sequences.id} (id:{self.id})"
 
 class Mask(models.Model):
+    STATUS_CHOICES = [
+        ('pending', _("Pending")),
+        ('processed', _("Processed")),
+        ('failed', _("Failed")),
+    ]    
     frame_sequence = models.ForeignKey(FrameSequence, related_name='masks', on_delete=models.CASCADE, verbose_name=_("Frame"))
     mask_file = models.ImageField(upload_to='mask/', verbose_name=_("Mask file"))
     mask_color = models.CharField(max_length=7, verbose_name=_("Mask Color"), null=True, blank=True)
     tag = models.ForeignKey(Tag, related_name='object_class', on_delete=models.CASCADE, verbose_name=_("Tag"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name=_("Status")
+    )    
 
     def delete(self, *args, **kwargs):
         if self.mask_file and os.path.isfile(self.mask_file.path):
