@@ -67,3 +67,4 @@ media_root/
 medical_segmentation/segment-anything-2
 medical_segmentation/yolo11n.pt
 medical_segmentation/yolov5su.pt
+runs

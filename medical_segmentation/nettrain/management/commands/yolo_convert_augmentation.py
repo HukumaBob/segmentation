@@ -3,11 +3,14 @@ import cv2
 import json
 import random
 import yaml  # Импортируем библиотеку для работы с YAML
+from albumentations import (
+    Compose, HorizontalFlip, RandomBrightnessContrast, ShiftScaleRotate, CLAHE, HueSaturationValue, BboxParams
+)
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from segmentation.models import FrameSequence, Mask
 
-ROUND_COORDINATES = 8
+ROUND_COORDINATES = 3
 
 class Command(BaseCommand):
     help = "Prepare data for YOLO training and COCO format"
@@ -25,6 +28,15 @@ class Command(BaseCommand):
         # Создадим директории, если они не существуют
         for path in [train_images_path, train_labels_path, val_images_path, val_labels_path, test_images_path, test_labels_path]:
             os.makedirs(path, exist_ok=True)
+
+        # Настроим аугментацию с помощью Albumentations
+        augmentation = Compose([
+            HorizontalFlip(p=0.5),
+            RandomBrightnessContrast(p=0.5),
+            ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.5),
+            CLAHE(p=0.2),
+            HueSaturationValue(p=0.3)
+        ], bbox_params=BboxParams(format='yolo', label_fields=['class_labels']))
 
         # Извлечем все фреймы, у которых есть связанные маски
         frame_sequences = list(FrameSequence.objects.filter(masks__isnull=False).distinct())
@@ -47,12 +59,12 @@ class Command(BaseCommand):
         }
         self.annotation_id = 1  # Уникальный ID для аннотаций
         self.category_map = {}  # Карта для хранения категорий
-        self.category_id = 0  # Уникальный ID для категорий
+        self.category_id = 1  # Уникальный ID для категорий
 
         # Обрабатываем фреймы
-        self.process_frames(train_frames, train_images_path, train_labels_path, coco_annotations, "train")
-        self.process_frames(val_frames, val_images_path, val_labels_path, coco_annotations, "val")
-        self.process_frames(test_frames, test_images_path, test_labels_path, coco_annotations, "test")
+        self.process_frames(train_frames, train_images_path, train_labels_path, augmentation, coco_annotations, "train")
+        self.process_frames(val_frames, val_images_path, val_labels_path, augmentation, coco_annotations, "val")
+        self.process_frames(test_frames, test_images_path, test_labels_path, None, coco_annotations, "test")
 
         # Сохраняем COCO-аннотации в файл
         coco_output_path = os.path.join(dataset_path, 'coco_annotations.json')
@@ -75,10 +87,8 @@ class Command(BaseCommand):
         with open(dataset_yaml_path, 'w') as yaml_file:
             yaml.dump(data, yaml_file, default_flow_style=False)
 
-    def process_frames(self, frames, images_path, labels_path, coco_annotations, split):
-        """Обрабатывает кадры, создавая файлы аннотаций."""
-        target_size = (640, 640)  # Размер, к которому будем приводить изображения
-
+    def process_frames(self, frames, images_path, labels_path, augmentation, coco_annotations, split):
+        """Обрабатывает кадры, выполняя аугментацию и создавая файлы аннотаций."""
         for frame in frames:
             frame_file_path = frame.frame_file.path
             frame_image = cv2.imread(frame_file_path)
@@ -87,21 +97,16 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Не удалось загрузить изображение: {frame_file_path}"))
                 continue
 
-            # Получаем исходные размеры изображения
-            original_height, original_width = frame_image.shape[:2]
-
-            # Изменяем размер изображения
-            frame_image_resized = cv2.resize(frame_image, target_size)
-            new_height, new_width = target_size
-
+            # Получаем размеры изображения
+            image_height, image_width = frame_image.shape[:2]
             image_id = frame.id
 
             # Добавляем информацию об изображении в COCO
             coco_annotations["images"].append({
                 "id": image_id,
                 "file_name": os.path.basename(frame_file_path),
-                "height": new_height,
-                "width": new_width
+                "height": image_height,
+                "width": image_width
             })
 
             # Создаем файл аннотаций для YOLO
@@ -126,17 +131,10 @@ class Command(BaseCommand):
 
                     class_id = self.category_map[mask.tag.name]
                     mask_path = mask.mask_file.path
-                    bboxes = self.get_bounding_boxes_from_mask(mask_path, original_width, original_height)
+                    bboxes = self.get_bounding_boxes_from_mask(mask_path, image_width, image_height)
 
                     for bbox in bboxes:
                         x_center, y_center, width, height = bbox
-
-                        # Преобразуем координаты для нового размера изображения
-                        x_center = round(x_center * new_width / original_width, ROUND_COORDINATES)
-                        y_center = round(y_center * new_height / original_height, ROUND_COORDINATES)
-                        width = round(width * new_width / original_width, ROUND_COORDINATES)
-                        height = round(height * new_height / original_height, ROUND_COORDINATES)
-
                         # Фильтруем bounding boxes с размерами менее 1% от ширины или высоты изображения
                         if width >= 0.01 and height >= 0.01:
                             bounding_boxes.append((x_center, y_center, width, height))
@@ -144,22 +142,52 @@ class Command(BaseCommand):
                             label_file.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
 
                             # Добавляем аннотацию в COCO
-                            x_min = int((x_center - width / 2) * new_width)
-                            y_min = int((y_center - height / 2) * new_height)
+                            x_min = int((x_center - width / 2) * image_width)
+                            y_min = int((y_center - height / 2) * image_height)
                             coco_annotations["annotations"].append({
                                 "id": self.annotation_id,
                                 "image_id": image_id,
                                 "category_id": class_id,
-                                "bbox": [x_min, y_min, int(width * new_width), int(height * new_height)],
-                                "area": int((width * new_width) * (height * new_height)),
+                                "bbox": [x_min, y_min, int(width * image_width), int(height * image_height)],
+                                "area": int((width * image_width) * (height * image_height)),
                                 "iscrowd": 0
                             })
                             self.annotation_id += 1
 
-            # Сохраняем изображение с новым размером
+            # Сохраняем исходное изображение
             image_name = f"{frame.id}.jpg"
             image_save_path = os.path.join(images_path, image_name)
-            cv2.imwrite(image_save_path, frame_image_resized)
+            cv2.imwrite(image_save_path, frame_image)
+
+            # Выполняем аугментацию, если она указана и есть bounding boxes
+            def round_bboxes(bboxes, decimals=3):
+                return [
+                    (
+                        round(x_center, decimals),
+                        round(y_center, decimals),
+                        round(width, decimals),
+                        round(height, decimals)
+                    ) for x_center, y_center, width, height in bboxes
+                ]
+
+            if augmentation and bounding_boxes:
+                augmented = augmentation(image=frame_image, bboxes=bounding_boxes, class_labels=class_labels)
+                aug_image = augmented['image']
+                aug_bboxes = round_bboxes(augmented['bboxes'], decimals=ROUND_COORDINATES)
+                # Проверка на корректность aугментированных bounding boxes
+                if aug_bboxes:
+                    assert all(0 <= x <= 1 and 0 <= y <= 1 and 0 <= w <= 1 and 0 <= h <= 1 for x, y, w, h in aug_bboxes), \
+                        "Augmented bounding boxes должны быть в пределах [0, 1]"                
+
+                # Сохраняем аугментированное изображение и аннотации
+                aug_image_name = f"{frame.id}_aug.jpg"
+                aug_image_save_path = os.path.join(images_path, aug_image_name)
+                cv2.imwrite(aug_image_save_path, aug_image)
+
+                aug_label_file_path = os.path.join(labels_path, f"{frame.id}_aug.txt")
+                with open(aug_label_file_path, 'w') as aug_label_file:
+                    for (x_center, y_center, width, height), class_id in zip(aug_bboxes, class_labels):
+                        aug_label_file.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
 
     def get_bounding_boxes_from_mask(self, mask_path, image_width, image_height):
         """Вычисляет bounding boxes из маски."""
@@ -177,4 +205,8 @@ class Command(BaseCommand):
             height = round(h / image_height, ROUND_COORDINATES)
             if width >= 0.01 and height >= 0.01:
                 bounding_boxes.append((x_center, y_center, width, height))
+            # Проверка на корректность bounding boxes
+        if bounding_boxes:
+            assert all(0 <= x <= 1 and 0 <= y <= 1 and 0 <= w <= 1 and 0 <= h <= 1 for x, y, w, h in bounding_boxes), \
+                "Bounding boxes должны быть в пределах [0, 1]"
         return bounding_boxes

@@ -6,7 +6,7 @@ import threading
 
 def start_training_view(request):
     if request.method == 'POST':
-        model_name = request.POST.get('model_name', 'yolov5s')  # Можно выбрать модель YOLOv5s, YOLOv5m и т.д.
+        model_name = request.POST.get('model_name', 'yolo11n')  # Можно выбрать модель YOLO
         epochs = int(request.POST.get('epochs', 10))
         batch_size = int(request.POST.get('batch_size', 16))
         img_size = int(request.POST.get('img_size', 640))
