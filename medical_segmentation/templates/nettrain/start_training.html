@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Start YOLO Training</title>
+</head>
+<body>
+    <h1>Start YOLO Training</h1>
+    <form method="post" action="{% url 'nettrain:start_training' %}">
+        {% csrf_token %}
+        <label for="model_name">Model Name:</label>
+        <select name="model_name">
+            <option value="yolo11n">yolo11n</option>
+            <option value="yolo11n">yolo11m</option>
+            <option value="yolo11n">yolo11l</option>
+            <option value="yolo11n">yolo11x</option>
+        </select><br>
+
+        <label for="epochs">Epochs:</label>
+        <input type="number" name="epochs" value="10"><br>
+
+        <label for="batch_size">Batch Size:</label>
+        <input type="number" name="batch_size" value="16"><br>
+
+        <label for="img_size">Image Size:</label>
+        <input type="number" name="img_size" value="640"><br>
+
+        <input type="submit" value="Start Training">
+    </form>
+</body>
+</html>

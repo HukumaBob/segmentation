@@ -2,6 +2,7 @@ import os
 import cv2
 import json
 import random
+import yaml  # Импортируем библиотеку для работы с YAML
 from albumentations import (
     Compose, HorizontalFlip, RandomBrightnessContrast, ShiftScaleRotate, CLAHE, HueSaturationValue, BboxParams
 )
@@ -70,7 +71,21 @@ class Command(BaseCommand):
         with open(coco_output_path, 'w') as coco_file:
             json.dump(coco_annotations, coco_file, indent=4)
 
+        # Создаем файл dataset.yaml для YOLO
+        self.create_dataset_yaml(dataset_path, train_images_path, val_images_path, self.category_map)
+
         self.stdout.write(self.style.SUCCESS("Датасет успешно подготовлен в формате YOLO и COCO."))
+
+    def create_dataset_yaml(self, dataset_path, train_images_path, val_images_path, category_map):
+        """Создает файл dataset.yaml для YOLO."""
+        dataset_yaml_path = os.path.join(dataset_path, 'dataset.yaml')
+        data = {
+            'train': train_images_path,
+            'val': val_images_path,
+            'names': list(category_map.keys())
+        }
+        with open(dataset_yaml_path, 'w') as yaml_file:
+            yaml.dump(data, yaml_file, default_flow_style=False)
 
     def process_frames(self, frames, images_path, labels_path, augmentation, coco_annotations, split):
         """Обрабатывает кадры, выполняя аугментацию и создавая файлы аннотаций."""
@@ -147,18 +162,22 @@ class Command(BaseCommand):
             # Выполняем аугментацию, если она указана и есть bounding boxes
             def round_bboxes(bboxes, decimals=3):
                 return [
-                        (
-                            round(x_center, decimals),
-                            round(y_center, decimals),
-                            round(width, decimals),
-                            round(height, decimals)
-                        ) for x_center, y_center, width, height in bboxes
-                    ]
+                    (
+                        round(x_center, decimals),
+                        round(y_center, decimals),
+                        round(width, decimals),
+                        round(height, decimals)
+                    ) for x_center, y_center, width, height in bboxes
+                ]
 
             if augmentation and bounding_boxes:
                 augmented = augmentation(image=frame_image, bboxes=bounding_boxes, class_labels=class_labels)
                 aug_image = augmented['image']
-                aug_bboxes = round_bboxes(augmented['bboxes'], decimals = ROUND_COORDINATES)
+                aug_bboxes = round_bboxes(augmented['bboxes'], decimals=ROUND_COORDINATES)
+                # Проверка на корректность aугментированных bounding boxes
+                if aug_bboxes:
+                    assert all(0 <= x <= 1 and 0 <= y <= 1 and 0 <= w <= 1 and 0 <= h <= 1 for x, y, w, h in aug_bboxes), \
+                        "Augmented bounding boxes должны быть в пределах [0, 1]"                
 
                 # Сохраняем аугментированное изображение и аннотации
                 aug_image_name = f"{frame.id}_aug.jpg"
@@ -186,4 +205,8 @@ class Command(BaseCommand):
             height = round(h / image_height, ROUND_COORDINATES)
             if width >= 0.01 and height >= 0.01:
                 bounding_boxes.append((x_center, y_center, width, height))
+            # Проверка на корректность bounding boxes
+        if bounding_boxes:
+            assert all(0 <= x <= 1 and 0 <= y <= 1 and 0 <= w <= 1 and 0 <= h <= 1 for x, y, w, h in bounding_boxes), \
+                "Bounding boxes должны быть в пределах [0, 1]"
         return bounding_boxes

@@ -11,8 +11,9 @@ urlpatterns = [
 # Подключение маршрутов для i18n
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
+    path('', include('data_preparation.urls')),
     path('', include('segmentation.urls')),
-    path('', include('data_preparation.urls')),  # Добавляем ваше приложение
+    path('', include('nettrain.urls')),
 )
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -65,3 +65,5 @@ media_root/
 # Секретные настройки (например, переменные окружения)
 .env
 medical_segmentation/segment-anything-2
+medical_segmentation/yolo11n.pt
+medical_segmentation/yolov5su.pt

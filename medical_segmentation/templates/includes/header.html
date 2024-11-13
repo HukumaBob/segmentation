@@ -14,9 +14,9 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'data_preparation:upload_video' %}">{% trans "Upload video" %}</a>
         </li>
-        {% comment %} <li class="nav-item">
-          <a class="nav-link" href="{% url 'frame_list' %}">{% trans "Frame List" %}</a>
-        </li>                 {% endcomment %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'nettrain:start_training' %}">{% trans "Train model" %}</a>
+        </li>
       </ul>
       <form action="{% url 'set_language' %}" method="post" class="d-flex">
         {% csrf_token %}
