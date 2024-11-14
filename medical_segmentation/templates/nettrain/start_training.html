@@ -1,30 +1,78 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Start YOLO Training</title>
-</head>
-<body>
-    <h1>Start YOLO Training</h1>
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+{% get_current_language as LANGUAGE_CODE %}
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">YOLO Training Configuration</h1>
     <form method="post" action="{% url 'nettrain:start_training' %}">
         {% csrf_token %}
-        <label for="model_name">Model Name:</label>
-        <select name="model_name">
-            <option value="yolo11n">yolo11n</option>
-            <option value="yolo11n">yolo11m</option>
-            <option value="yolo11n">yolo11l</option>
-            <option value="yolo11n">yolo11x</option>
-        </select><br>
 
-        <label for="epochs">Epochs:</label>
-        <input type="number" name="epochs" value="10"><br>
+        <!-- Заголовок для обязательных параметров -->
+        <h4 class="mt-4">Required Parameters</h4>
+        <div class="form-group mb-3">
+            <label for="model_name" class="form-label">Model Name:</label>
+            <select class="form-select" id="model_name" name="model_name">
+                <option value="yolo11n">yolo11n</option>
+                <option value="yolo11m">yolo11m</option>
+                <option value="yolo11l">yolo11l</option>
+                <option value="yolo11x">yolo11x</option>
+            </select>
+        </div>
 
-        <label for="batch_size">Batch Size:</label>
-        <input type="number" name="batch_size" value="16"><br>
+        <div class="form-group mb-3">
+            <label for="epochs" class="form-label">Epochs:</label>
+            <input type="number" class="form-control" id="epochs" name="epochs" value="10">
+        </div>
 
-        <label for="img_size">Image Size:</label>
-        <input type="number" name="img_size" value="640"><br>
+        <div class="form-group mb-3">
+            <label for="batch_size" class="form-label">Batch Size:</label>
+            <input type="number" class="form-control" id="batch_size" name="batch_size" value="16">
+        </div>
 
-        <input type="submit" value="Start Training">
+        <div class="form-group mb-4">
+            <label for="img_size" class="form-label">Image Size:</label>
+            <input type="number" class="form-control" id="img_size" name="img_size" value="640">
+        </div>
+
+        <!-- Заголовок для опциональных параметров -->
+        <h4 class="mt-4">Optional Parameters</h4>
+        <div class="row">
+            <!-- Все опциональные параметры -->
+            <div class="col-md-6 mb-3">
+                <label for="model" class="form-label">Model:</label>
+                <input type="text" class="form-control" id="model" name="model" placeholder="Path to model (.pt or .yaml)">
+                <div class="form-text description">Specifies the model file for training.</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="data" class="form-label">Data:</label>
+                <input type="text" class="form-control" id="data" name="data" placeholder="Path to dataset configuration">
+                <div class="form-text description">Path to the dataset configuration file (e.g., coco8.yaml).</div>
+            </div>
+
+            <!-- Остальные параметры по аналогии с добавленными классами -->
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">Start Training</button>
+        </div>
     </form>
-</body>
-</html>
+</div>
+<style>
+    /* Основные стили для описаний */
+    .description {
+        font-size: 0.9rem;
+        color: #6c757d; /* Серый цвет для светлого режима */
+    }
+    
+    /* Стили для Dark Mode */
+    @media (prefers-color-scheme: dark) {
+        .description {
+            color: #adb5bd; /* Светло-серый цвет для темного режима */
+        }
+    }    
+</style>
+{% endblock %}

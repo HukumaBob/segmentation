@@ -15,7 +15,7 @@ def start_training_view(request):
         def train_and_save():
             model_save_path = train_yolo_model(model_name, epochs, batch_size, img_size)
             accuracy = 0.9  # Вы можете получить точность из результатов обучения
-            save_model_metadata(model_save_path, model_name, epochs, accuracy)
+            save_model_metadata(model_save_path, model_name, epochs, batch_size, img_size, accuracy)
 
         threading.Thread(target=train_and_save).start()
 
