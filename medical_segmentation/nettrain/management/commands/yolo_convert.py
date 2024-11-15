@@ -77,7 +77,7 @@ class Command(BaseCommand):
 
     def process_frames(self, frames, images_path, labels_path, coco_annotations, split):
         """Обрабатывает кадры, создавая файлы аннотаций."""
-        target_size = (640, 640)  # Размер, к которому будем приводить изображения
+        # target_size = (640, 640)  # Размер, к которому будем приводить изображения
 
         for frame in frames:
             frame_file_path = frame.frame_file.path
@@ -91,8 +91,8 @@ class Command(BaseCommand):
             original_height, original_width = frame_image.shape[:2]
 
             # Изменяем размер изображения
-            frame_image_resized = cv2.resize(frame_image, target_size)
-            new_height, new_width = target_size
+            # frame_image_resized = cv2.resize(frame_image, target_size)
+            # new_height, new_width = target_size
 
             image_id = frame.id
 
@@ -100,8 +100,8 @@ class Command(BaseCommand):
             coco_annotations["images"].append({
                 "id": image_id,
                 "file_name": os.path.basename(frame_file_path),
-                "height": new_height,
-                "width": new_width
+                "height": original_height,
+                "width": original_width
             })
 
             # Создаем файл аннотаций для YOLO
@@ -132,10 +132,10 @@ class Command(BaseCommand):
                         x_center, y_center, width, height = bbox
 
                         # Преобразуем координаты для нового размера изображения
-                        x_center = round(x_center * new_width / original_width, ROUND_COORDINATES)
-                        y_center = round(y_center * new_height / original_height, ROUND_COORDINATES)
-                        width = round(width * new_width / original_width, ROUND_COORDINATES)
-                        height = round(height * new_height / original_height, ROUND_COORDINATES)
+                        # x_center = round(x_center * new_width / original_width, ROUND_COORDINATES)
+                        # y_center = round(y_center * new_height / original_height, ROUND_COORDINATES)
+                        # width = round(width * new_width / original_width, ROUND_COORDINATES)
+                        # height = round(height * new_height / original_height, ROUND_COORDINATES)
 
                         # Фильтруем bounding boxes с размерами менее 1% от ширины или высоты изображения
                         if width >= 0.01 and height >= 0.01:
@@ -144,14 +144,14 @@ class Command(BaseCommand):
                             label_file.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
 
                             # Добавляем аннотацию в COCO
-                            x_min = int((x_center - width / 2) * new_width)
-                            y_min = int((y_center - height / 2) * new_height)
+                            x_min = int((x_center - width / 2) * original_width)
+                            y_min = int((y_center - height / 2) * original_height)
                             coco_annotations["annotations"].append({
                                 "id": self.annotation_id,
                                 "image_id": image_id,
                                 "category_id": class_id,
-                                "bbox": [x_min, y_min, int(width * new_width), int(height * new_height)],
-                                "area": int((width * new_width) * (height * new_height)),
+                                "bbox": [x_min, y_min, int(width * original_width), int(height * original_height)],
+                                "area": int((width * original_width) * (height * original_height)),
                                 "iscrowd": 0
                             })
                             self.annotation_id += 1
@@ -159,7 +159,7 @@ class Command(BaseCommand):
             # Сохраняем изображение с новым размером
             image_name = f"{frame.id}.jpg"
             image_save_path = os.path.join(images_path, image_name)
-            cv2.imwrite(image_save_path, frame_image_resized)
+            cv2.imwrite(image_save_path, frame_image)
 
     def get_bounding_boxes_from_mask(self, mask_path, image_width, image_height):
         """Вычисляет bounding boxes из маски."""
