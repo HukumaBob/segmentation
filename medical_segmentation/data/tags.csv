@@ -20,3 +20,22 @@ anatomy,f_003000,inlet_patch,inlet patch
 anatomy,a_160000,z_line,z line
 quality,q_001000,foam,foam
 quality,q_002000,mucus,mucus
+anatomy,a_160000,cardia,cardia
+anatomy,a_160001,ventriculus,stomach
+anatomy,a_170000,fundus,fundus
+anatomy,a_180000,corpus_ventriculi,corpus ventriculi
+anatomy,a_190000,curvatura_major,greater curvature
+anatomy,a_200000,curvatura_minor,lesser curvature
+anatomy,a_210000,plicae_gastricae,gastric folds
+anatomy,a_220000,angulus ventriculi,angle of the stomach
+anatomy,a_220001,antrum,antrum
+anatomy,a_230000,pylorus,pylorus
+anatomy,a_240000,ampulla_duodeni,duodenal bulb
+anatomy,a_250000,duodenum,duodenum
+anatomy,a_260000,papilla_maj,major duodenal papilla
+anatomy,a_270000,papilla_min,minor duodenal papilla
+anatomy,a_280000,plicae_circulares,circular_folds
+findings,f_002000,lymphangiectasis,lymphangiectasis
+findings,f_002001,exesa,erosion
+findings,f_002002,ulceratio,ulcer
+findings,f_002003,angiectasis,angiectasia
