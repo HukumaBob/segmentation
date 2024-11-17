@@ -68,3 +68,5 @@ medical_segmentation/segment-anything-2
 medical_segmentation/yolo11n.pt
 medical_segmentation/yolov5su.pt
 runs
+medical_segmentation/best.pt
+medical_segmentation/yolov8n.pt

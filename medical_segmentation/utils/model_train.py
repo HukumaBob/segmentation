@@ -19,7 +19,9 @@ def train_yolo_model(model_name, epochs, batch, img_size):
     # Путь для сохранения модели
     save_dir = os.path.join(settings.MEDIA_ROOT, 'trained_models')
     os.makedirs(save_dir, exist_ok=True)
-    model_save_path = os.path.join(save_dir, f"{model_name}_trained.pt")
+
+    # Название поддиректории для результатов обучения
+    model_name_trained = f"{model_name}_trained"
 
     # Загрузка модели
     model = YOLO(f"{model_name}.pt")  # Загрузите предобученную модель
@@ -31,8 +33,11 @@ def train_yolo_model(model_name, epochs, batch, img_size):
         batch=batch,
         imgsz=img_size,
         project=save_dir,  # Путь для сохранения результатов проекта
-        name=f"{model_name}_trained"
+        name=model_name_trained
     )
+
+    # Путь к обученной модели
+    model_save_path = os.path.join(save_dir, model_name_trained, 'weights', 'best.pt')
 
     return model_save_path
 

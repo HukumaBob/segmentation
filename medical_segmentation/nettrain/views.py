@@ -14,6 +14,7 @@ def start_training_view(request):
         # Запускаем обучение в отдельном потоке, чтобы не блокировать веб-сервер
         def train_and_save():
             model_save_path = train_yolo_model(model_name, epochs, batch_size, img_size)
+            print('model_save_path: ', model_save_path)
             accuracy = 0.9  # Вы можете получить точность из результатов обучения
             save_model_metadata(model_save_path, model_name, epochs, batch_size, img_size, accuracy)
 

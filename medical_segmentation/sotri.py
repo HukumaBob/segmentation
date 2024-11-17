@@ -1,55 +1,78 @@
-# source from https://dipankarmedh1.medium.com/real-time-object-detection-with-yolo-and-webcam-enhancing-your-computer-vision-skills-861b97c78993
-
 from ultralytics import YOLO
 import cv2
-import math 
-# start webcam
-cap = cv2.VideoCapture(0)
+import math
+
+# Замените 0 на путь к вашему видеофайлу
+cap = cv2.VideoCapture('162ccf95-672f-4a8c-a3a5-fed1bbe5c5a9.webm')
+
+# Убедитесь, что видео успешно открыто
+if not cap.isOpened():
+    print("Ошибка: не удалось открыть видеофайл")
+    exit()
+
+# Настройка ширины и высоты кадра (если необходимо)
 cap.set(3, 640)
 cap.set(4, 480)
 
-# model
-model = YOLO("yolov8n.pt")
+# Загрузка модели YOLO
+model = YOLO("best.pt")
 
-# object classes
-classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat",
-              "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
-              "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
-              "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat",
-              "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-              "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli",
-              "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed",
-              "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone",
-              "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-              "teddy bear", "hair drier", "toothbrush"
-              ]
+# Имена классов объектов
+classNames = [
+    "adenoma",
+    "duodenum",
+    "papilla_maj",
+    "antrum",
+    "angiectasis",
+    "mouthpiece",
+    "tongue",
+    "exesa",
+    "pylorus",
+    "oesophagus",
+    "ampulla_duodeni",
+    "gastroesophageal_junction",
+    "foam",
+    "palate",
+    "pharynx",
+    "vestibular_fold",
+    "angulus ventriculi",
+    "epiglottis",
+    "teeth",
+    "phlebectasia"
+]
 
 
 while True:
     success, img = cap.read()
+    
+    # Проверка успешного чтения кадра. Если достигнут конец видео, выходим из цикла
+    if not success:
+        print("Конец видео")
+        break
+
+    # Получение результатов с модели YOLO
     results = model(img, stream=True)
 
-    # coordinates
+    # Обработка результатов
     for r in results:
         boxes = r.boxes
-
         for box in boxes:
-            # bounding box
+            # Координаты ограничивающего прямоугольника
             x1, y1, x2, y2 = box.xyxy[0]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2) # convert to int values
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)  # Преобразование в целые значения
 
-            # put box in cam
+            # Рисуем прямоугольник на изображении
             cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
 
-            # confidence
-            confidence = math.ceil((box.conf[0]*100))/100
-            print("Confidence --->",confidence)
+            # Доверие (confidence)
+            confidence = math.ceil((box.conf[0] * 100)) / 100
+            print("Confidence --->", confidence)
 
-            # class name
+            # Имя класса
             cls = int(box.cls[0])
             print("Class name -->", classNames[cls])
 
-            # object details
+            # Выводим детали объекта на изображении
             org = [x1, y1]
             font = cv2.FONT_HERSHEY_SIMPLEX
             fontScale = 1
@@ -58,8 +81,11 @@ while True:
 
             cv2.putText(img, classNames[cls], org, font, fontScale, color, thickness)
 
-    cv2.imshow('Webcam', img)
-    if cv2.waitKey(1) == ord('q'):
+    # Отображение изображения с наложенными результатами
+    cv2.imshow('Video', img)
+
+    # Нажмите 'q', чтобы выйти из просмотра видео
+    if cv2.waitKey(55) & 0xFF == ord('q'):
         break
 
 cap.release()
