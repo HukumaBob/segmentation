@@ -3,7 +3,7 @@ import cv2
 import math
 
 # Замените 0 на путь к вашему видеофайлу
-cap = cv2.VideoCapture('162ccf95-672f-4a8c-a3a5-fed1bbe5c5a9.webm')
+cap = cv2.VideoCapture('000.mpg')
 
 # Убедитесь, что видео успешно открыто
 if not cap.isOpened():

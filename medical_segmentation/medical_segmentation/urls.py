@@ -14,6 +14,7 @@ urlpatterns += i18n_patterns(
     path('', include('data_preparation.urls')),
     path('', include('segmentation.urls')),
     path('', include('nettrain.urls')),
+    path('', include('view_result.urls')),
 )
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

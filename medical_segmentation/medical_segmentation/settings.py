@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'segmentation',
     'data_preparation',
     'nettrain',
+    'view_result',
 ]
 
 MIDDLEWARE = [

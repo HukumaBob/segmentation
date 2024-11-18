@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Загрузка видео для распознавания объектов</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Выбор модели -->
+        <div class="mb-3">
+            <label for="model_id" class="form-label">Выберите модель:</label>
+            <select class="form-select" id="model_id" name="model_id">
+                {% for model in models %}
+                    <option value="{{ model.id }}">{{ model.name }} - Версия {{ model.version_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Загрузка видео -->
+        <div class="mb-3">
+            <label for="video" class="form-label">Загрузите видео:</label>
+            <input type="file" class="form-control" id="video" name="video" required>
+        </div>
+
+        <!-- Кнопка для отправки формы -->
+        <button type="submit" class="btn btn-primary">Начать распознавание</button>
+    </form>
+</div>
+{% endblock %}
