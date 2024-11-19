@@ -16,10 +16,10 @@ def start_training_view(request):
 
         # Удаляем параметры, которые не нужны для вызова train_yolo_model
         all_params.pop('csrfmiddlewaretoken', None)  # Удаляем CSRF токен
-        all_params.pop('model_name', None)  # Удаляем CSRF токен
-        all_params.pop('epochs', None)  # Удаляем CSRF токен
-        all_params.pop('batch_size', None)  # Удаляем CSRF токен
-        all_params.pop('img_size', None)  # Удаляем CSRF токен
+        all_params.pop('model_name', None)  
+        all_params.pop('epochs', None)  
+        all_params.pop('batch_size', None)  
+        all_params.pop('img_size', None)  
         
         # Фильтруем пустые или незаполненные значения
         all_params = {k: v for k, v in all_params.items() if v}  # Оставляем только непустые значения
@@ -41,15 +41,13 @@ def start_training_view(request):
 
         # Запускаем обучение в отдельном потоке
         def train_and_save():
-            model_save_path = train_yolo_model(
+            model_save_path, accuracy = train_yolo_model(
                 model_name=model_name,
                 epochs=epochs,
                 batch=batch_size,
                 img_size=img_size,
                 **all_params  # Передаем все параметры как именованные аргументы
             )
-            print('model_save_path: ', model_save_path)
-            accuracy = 0.9  # Вы можете получить точность из результатов обучения
             save_model_metadata(model_save_path, model_name, epochs, batch_size, img_size, accuracy)
 
         threading.Thread(target=train_and_save).start()

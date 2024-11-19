@@ -1,10 +1,8 @@
+### `README.md` for the Endoscopic Image Annotation Dataset Project
 ![alt text](001.png)
 ![alt text](002.png)
 ![alt text](003.png)
-### `README.md` for the Endoscopic Image Annotation Dataset Project
-
----
-
+![alt text](004.png)
 # Project: Creating an Annotation Dataset for Endoscopic Images and Training a Neural Network
 
 ## Project Overview
@@ -21,6 +19,9 @@ The annotated dataset will be used to **train a neural network** for automatic d
 3. **Quality assessment of the procedure**  
 
 The project aims to support both **offline mode** (post-processing) and **online mode** (real-time analysis).
+
+**Image Segmentation** is powered by **SAM2** ([Segment Anything in Images and Videos](https://arxiv.org/abs/2408.00714)).  
+**Training and Detection** are performed using **YOLO v11**.
 
 ---
 
@@ -45,6 +46,7 @@ The project aims to support both **offline mode** (post-processing) and **online
 1. **Mask Generation for Individual Frames**  
    - Users select a specific frame and create a mask by specifying its color and corresponding tag.
    - The mask is saved both in the database and on the disk.
+   - **Segmentation is powered by SAM2**, enabling precise and efficient mask generation.
 
 2. **Extrapolation of Masks to All Frames in the Sequence**  
    - An extrapolation model automatically applies annotations across all frames based on the first annotated frame.
@@ -55,6 +57,9 @@ The project aims to support both **offline mode** (post-processing) and **online
 
 4. **Mask Display and Management**  
    - Masks are displayed on the images, with options to toggle visibility or delete them.
+
+5. **Model Training and Detection**  
+   - **YOLO v11** is used for efficient and accurate training and object detection in endoscopic images.
 
 ---
 
@@ -174,6 +179,25 @@ Example Request:
 
 ---
 
+## Technologies Used
+
+- **SAM2** for Image Segmentation  
+  See [Segment Anything in Images and Videos (SAM2)](https://arxiv.org/abs/2408.00714) for details.  
+  ```plaintext
+  @article{ravi2024sam2,
+    title={SAM 2: Segment Anything in Images and Videos},
+    author={Ravi, Nikhila and Gabeur, Valentin and Hu, Yuan-Ting and Hu, Ronghang and Ryali, Chaitanya and Ma, Tengyu and Khedr, Haitham and R{\"a}dle, Roman and Rolland, Chloe and Gustafson, Laura and Mintun, Eric and Pan, Junting and Alwala, Kalyan Vasudev and Carion, Nicolas and Wu, Chao-Yuan and Girshick, Ross and Doll{\'a}r, Piotr and Feichtenhofer, Christoph},
+    journal={arXiv preprint arXiv:2408.00714},
+    url={https://arxiv.org/abs/2408.00714},
+    year={2024}
+  }
+  ```
+
+- **YOLO v11** for Object Detection and Training  
+  [YOLO v11 Documentation](https://github.com/ultralytics/yolov11)
+
+---
+
 ## Future Improvements
 
 - **Online Analysis Integration**: Real-time identification of anatomical landmarks during procedures.
@@ -211,3 +235,5 @@ If you have any questions or suggestions, feel free to reach out:
 ## Conclusion
 
 This project aims to create a high-quality annotated dataset for endoscopic procedures. The data collected will help improve diagnostics and the quality of endoscopic procedures through state-of-the-art AI technologies.
+
+---
