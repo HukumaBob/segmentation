@@ -1,5 +1,6 @@
 import os
-from django.shortcuts import render, redirect
+from PIL import ImageFont
+from django.shortcuts import render
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from nettrain.models import NeuralNetworkVersion
@@ -24,17 +25,32 @@ def view_video(request):
         # Загружаем модель YOLO
         model = YOLO(model_file_path)
 
-        # Обработка видео с использованием OpenCV
+        # Открываем видео с использованием OpenCV
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             return render(request, 'error.html', {'message': 'Ошибка: не удалось открыть видеофайл'})
+
+        # Получаем параметры видео
+        fourcc = cv2.VideoWriter_fourcc(*'VP80')  # Кодек для формата WebM
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Путь для сохранения обработанного видео в формате WebM
+        processed_video_path = os.path.join(settings.MEDIA_ROOT, 'videos', f"processed_{filename}.webm")
+        out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
+
+        # Загружаем шрифт для кириллицы
+        # font_path = os.path.join(settings.BASE_DIR, 'fonts', 'roboto', 'Roboto-Black.ttf')  # Замените на путь к вашему TTF-файлу
+        # font = ImageFont.truetype(font_path, 24)  # Размер шрифта можно изменить по вашему усмотрению
+
 
         # Обработка каждого кадра видео
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             # Распознавание объектов на кадре
             results = model(frame, stream=True)
             for r in results:
@@ -44,18 +60,28 @@ def view_video(request):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 255), 2)
                     cls = int(box.cls[0])
                     confidence = box.conf[0] * 100
-                    class_name = "Class Name Here"  # Замените это на правильное имя класса
+                    class_name = "Fuck!"  # Замените это на правильное имя класса
 
                     # Добавление текста на кадр
                     cv2.putText(frame, f"{class_name} {confidence:.2f}%", (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-            # Здесь можно добавить сохранение обработанного видео или отправку кадра в поток
+            # Сохраняем обработанный кадр в видеофайл
+            out.write(frame)
 
+        # Освобождаем ресурсы
         cap.release()
+        out.release()
         cv2.destroyAllWindows()
 
-        return render(request, 'success.html', {'video_path': video_path})
+        # Передаем путь к обработанному видео в шаблон
+        return render(
+            request, 
+            'view_result/success.html', {
+                'video_path': os.path.join(settings.MEDIA_URL, 'videos', f"{filename}.webm"),
+                'processed_video_path': os.path.join(settings.MEDIA_URL, 'videos', f"processed_{filename}.webm"),
+                }
+                )
 
     # Получаем все доступные модели для выбора в шаблоне
     models = NeuralNetworkVersion.objects.all()

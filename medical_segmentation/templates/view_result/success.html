@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Обработанное видео</h2>
+
+    <!-- Видео с результатами распознавания объектов -->
+    <video width="640" height="480" controls>
+        console.log(video_path)
+        <source src="{{ processed_video_path|escape }}">
+        Ваш браузер не поддерживает воспроизведение видео.
+    </video>
+
+    <a href="{% url 'view_result:view_video' %}" class="btn btn-primary mt-3">Обратно к загрузке видео</a>
+</div>
+{% endblock %}

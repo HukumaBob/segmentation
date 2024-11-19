@@ -1,9 +1,10 @@
 import os
+import uuid
 from ultralytics import YOLO  # Импортируем YOLO из ultralytics
 from django.conf import settings
 from nettrain.models import NeuralNetworkVersion
 
-def train_yolo_model(model_name, epochs, batch, img_size):
+def train_yolo_model(model_name, epochs, batch, img_size, **kwargs):
     """
     Функция для дообучения модели YOLOv8.
     
@@ -11,6 +12,7 @@ def train_yolo_model(model_name, epochs, batch, img_size):
     :param epochs: Количество эпох обучения
     :param batch_size: Размер батча
     :param img_size: Размер изображения (например, 640)
+    :param kwargs: Дополнительные опциональные параметры
     :return: Путь к обученной модели
     """
     # Путь к данным (YOLOv8 использует файл .yaml для описания датасета)
@@ -20,8 +22,10 @@ def train_yolo_model(model_name, epochs, batch, img_size):
     save_dir = os.path.join(settings.MEDIA_ROOT, 'trained_models')
     os.makedirs(save_dir, exist_ok=True)
 
+    unique_suffix = str(uuid.uuid4())
+
     # Название поддиректории для результатов обучения
-    model_name_trained = f"{model_name}_trained"
+    model_name_trained = f"{model_name}_{unique_suffix}_trained"
 
     # Загрузка модели
     model = YOLO(f"{model_name}.pt")  # Загрузите предобученную модель
@@ -33,7 +37,8 @@ def train_yolo_model(model_name, epochs, batch, img_size):
         batch=batch,
         imgsz=img_size,
         project=save_dir,  # Путь для сохранения результатов проекта
-        name=model_name_trained
+        name=model_name_trained,
+        **kwargs  # Передаем все опциональные параметры
     )
 
     # Путь к обученной модели

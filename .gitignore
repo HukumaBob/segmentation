@@ -71,3 +71,4 @@ runs
 medical_segmentation/best.pt
 medical_segmentation/yolov8n.pt
 medical_segmentation/000.mpg
+medical_segmentation/fonts
