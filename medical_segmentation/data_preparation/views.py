@@ -4,7 +4,9 @@ import os
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
 from django.conf import settings
-from .forms import MultipleImageUploadForm, SequenceForm, VideoForm
+
+from utils.crop_frame import crop_frame
+from .forms import FrameSequenceForm, VideoForm
 from .models import ImageUpload, Video, Sequences
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
@@ -30,30 +32,62 @@ def image_list(request):
 
 def upload_multiple_images(request):
     if request.method == 'POST':
-        form = MultipleImageUploadForm(request.POST, request.FILES)
+        form = FrameSequenceForm(request.POST)
         if form.is_valid():
+            # Получаем данные из формы
+            features = form.cleaned_data['features']
+            left_crop = form.cleaned_data['left_crop'] or 0
+            right_crop = form.cleaned_data['right_crop'] or 0
+            top_crop = form.cleaned_data['top_crop'] or 0
+            bottom_crop = form.cleaned_data['bottom_crop'] or 0
+
+            # Создаём новую последовательность
+            sequence = Sequences.objects.create(
+                features=features,
+                left_crop=left_crop,
+                right_crop=right_crop,
+                top_crop=top_crop,
+                bottom_crop=bottom_crop,
+                start_time=0,  # можно заменить на данные, если нужно
+                duration=0,    # можно заменить на данные, если нужно
+                fps=1          # стандартное значение или заменить
+            )
+
+            # Обрабатываем множественные файлы
             files = request.FILES.getlist('images')
-            tag = form.cleaned_data['object_class']  # Исправлено: используем правильное имя поля
-
             for f in files:
-                # Генерация нового имени файла с помощью UUID
-                ext = f.name.split('.')[-1]  # Получаем расширение файла
-                new_filename = f"{uuid.uuid4()}.{ext}"  # Генерируем уникальное имя
+                # Обрезаем изображение
+                cropped_image = crop_frame(f, left_crop, top_crop, right_crop, bottom_crop)
 
-                # Создаем экземпляр ImageUpload и сохраняем его
-                image_instance = ImageUpload(
-                    image=f,  # передаем файл, который позже будет сохранен с новым именем
-                    tag=tag  # Используем корректное поле 'tag'
+                # Генерация уникального имени файла
+                ext = f.name.split('.')[-1]
+                new_filename = f"{uuid.uuid4()}.{ext}"
+
+                frame_instance = FrameSequence(
+                    sequences=sequence,
+                    frame_file=None  # Временно None
                 )
-                image_instance.image.name = new_filename  # Устанавливаем новое имя файла
-                image_instance.save()  # Сохраняем экземпляр модели в БД
-            
-            return redirect('data_preparation:image_list')
+                frame_instance.frame_file.save(new_filename, cropped_image, save=False)  # Сохраняем файл
+                frame_instance.save()
+
+            return redirect('data_preparation:frame_sequence_list')
     else:
-        form = MultipleImageUploadForm()
+        form = FrameSequenceForm()
 
     return render(request, 'data_preparation/upload_multiple_images.html', {'form': form})
 
+def frame_sequence_list(request):
+    if request.method == 'POST':
+        if 'delete_selected' in request.POST:
+            frame_ids = request.POST.getlist('frames')
+            FrameSequence.objects.filter(id__in=frame_ids).delete()
+        elif 'delete_single' in request.POST:
+            frame_id = request.POST.get('delete_single')
+            FrameSequence.objects.get(id=frame_id).delete()
+        return redirect('data_preparation:frame_sequence_list')
+
+    frames = FrameSequence.objects.select_related('sequences').all()
+    return render(request, 'data_preparation/frame_sequence_list.html', {'frames': frames})
 
 def upload_video(request):
     if request.method == 'POST':

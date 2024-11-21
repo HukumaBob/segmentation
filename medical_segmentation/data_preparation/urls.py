@@ -4,6 +4,7 @@ from . import views
 app_name = 'data_preparation'
 urlpatterns = [
     path('upload-multiple/', views.upload_multiple_images, name='upload_multiple_images'),
+    path('frame-sequences/', views.frame_sequence_list, name='frame_sequence_list'),
     path('upload-video/', views.upload_video, name='upload_video'),
     path('get_videos/', views.get_videos, name='get_videos'),
     path('delete-video/', views.delete_video, name='delete_video'),

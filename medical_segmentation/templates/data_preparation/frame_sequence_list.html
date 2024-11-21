@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="container">
+  <h2>{% trans "Frame Sequence List" %}</h2>
+  {% if frames %}
+    <form method="post">
+      {% csrf_token %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th>{% trans "Frame" %}</th>
+            <th>{% trans "Sequence" %}</th>
+            <th>{% trans "Height x Width" %}</th>
+            <th>{% trans "Created At" %}</th>
+            <th><button type="submit" name="delete_selected" class="btn btn-danger">{% trans "Delete Selected" %}</button></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for frame in frames %}
+            <tr>
+              <td><input type="checkbox" name="frames" value="{{ frame.id }}" class="select-item"></td>
+              <td><img src="{{ frame.frame_file.url }}" alt="{% trans "Frame" %}" width="100" class="zoomable"></td>
+              <td>{{ frame.sequences.features }}</td>
+              <td>{{ frame.height }} x {{ frame.width }}</td>
+              <td>{{ frame.created_at }}</td>
+              <td>
+                <button type="submit" name="delete_single" value="{{ frame.id }}" class="btn btn-danger">{% trans "Delete Frame" %}</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  {% else %}
+    <p>{% trans "No frames available." %}</p>
+  {% endif %}
+</div>
+{% endblock %}

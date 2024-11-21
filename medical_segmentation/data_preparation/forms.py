@@ -1,4 +1,6 @@
 from django import forms
+
+from segmentation.models import FrameSequence
 from .models import Tag, Sequences, Video
 from django.utils.translation import gettext_lazy as _
 
@@ -54,3 +56,16 @@ class VideoUploadForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter video description'}),
             'video_file': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
         }
+
+class FrameSequenceForm(forms.Form):
+    features = forms.CharField(
+        max_length=255,
+        required=True,
+        label="Sequence Features"
+    )
+    left_crop = forms.IntegerField(required=False, initial=0, label="Left Crop")
+    right_crop = forms.IntegerField(required=False, initial=0, label="Right Crop")
+    top_crop = forms.IntegerField(required=False, initial=0, label="Top Crop")
+    bottom_crop = forms.IntegerField(required=False, initial=0, label="Bottom Crop")
+
+        

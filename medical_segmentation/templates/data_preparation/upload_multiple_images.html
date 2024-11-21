@@ -2,12 +2,37 @@
 {% load static %}
 {% load i18n %}
 {% block content %}
-  <div class="container">
-    <h2>{% trans "Upload Images" %}</h2>
-    <form method="POST" enctype="multipart/form-data">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">{% trans "Upload Images" %}</button>
-    </form>
-  </div>
+<div class="container">
+  <h2>{% trans "Upload Frame Sequences" %}</h2>
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="features">{% trans "Sequence Features" %}</label>
+      <input type="text" name="features" id="features" class="form-control" required>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <label for="left_crop">{% trans "Left Crop" %}</label>
+        <input type="number" name="left_crop" id="left_crop" class="form-control" value="0">
+      </div>
+      <div class="col-md-3">
+        <label for="right_crop">{% trans "Right Crop" %}</label>
+        <input type="number" name="right_crop" id="right_crop" class="form-control" value="0">
+      </div>
+      <div class="col-md-3">
+        <label for="top_crop">{% trans "Top Crop" %}</label>
+        <input type="number" name="top_crop" id="top_crop" class="form-control" value="0">
+      </div>
+      <div class="col-md-3">
+        <label for="bottom_crop">{% trans "Bottom Crop" %}</label>
+        <input type="number" name="bottom_crop" id="bottom_crop" class="form-control" value="0">
+      </div>
+    </div>
+    <div class="mb-3 mt-3">
+      <label for="images">{% trans "Upload Images" %}</label>
+      <input type="file" name="images" id="images" multiple class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">{% trans "Upload" %}</button>
+  </form>
+</div>
 {% endblock %}

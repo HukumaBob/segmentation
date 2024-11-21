@@ -38,7 +38,7 @@ class ImageUpload(models.Model):
         super().delete(*args, **kwargs)
 
     def __str__(self):
-        return f"Image {self.id} - {self.object_class or _('No class')}"
+        return f"Image {self.id} - {self.tag or _('No class')}"
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,14 @@ class Video(models.Model):
             logger.error(f"Ошибка при удалении директории {video_dir}: {e}")
 
 class Sequences(models.Model):
-    video = models.ForeignKey(Video, related_name='sequences', on_delete=models.CASCADE, verbose_name=_("Video"))
+    video = models.ForeignKey(
+        Video,
+        related_name='sequences',
+        on_delete=models.CASCADE,
+        verbose_name=_("Video"),
+        null=True,
+        blank=True
+        )
     features = models.CharField(max_length=255, verbose_name=_("Frames features"))
     start_time = models.IntegerField(null=False, default=0, verbose_name=_("Start time"))
     duration = models.IntegerField(null=False, default=0, verbose_name=_("Duration of sequence"))
