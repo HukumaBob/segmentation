@@ -4,6 +4,7 @@ import os
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
 from django.conf import settings
+from django.db.models import Count
 
 from utils.crop_frame import crop_frame
 from .forms import FrameSequenceForm, VideoForm
@@ -78,16 +79,28 @@ def upload_multiple_images(request):
 
 def frame_sequence_list(request):
     if request.method == 'POST':
-        if 'delete_selected' in request.POST:
-            frame_ids = request.POST.getlist('frames')
-            FrameSequence.objects.filter(id__in=frame_ids).delete()
-        elif 'delete_single' in request.POST:
-            frame_id = request.POST.get('delete_single')
-            FrameSequence.objects.get(id=frame_id).delete()
+        if 'delete_sequence' in request.POST:
+            sequence_id = request.POST.get('delete_sequence')
+            sequence = Sequences.objects.get(id=sequence_id)
+            sequence.delete()  # Удаляет последовательность и связанные кадры через каскад
+        elif 'edit_sequence' in request.POST:
+            sequence_id = request.POST.get('edit_sequence')
+            # Переход к странице редактирования (замените на ваш URL)
+            return redirect('data_preparation:edit_sequence', sequence_id=sequence_id)
         return redirect('data_preparation:frame_sequence_list')
 
-    frames = FrameSequence.objects.select_related('sequences').all()
-    return render(request, 'data_preparation/frame_sequence_list.html', {'frames': frames})
+    # Группируем данные по последовательностям
+    sequences = Sequences.objects.annotate(frame_count=Count('frame_sequences'))
+    sequence_data = []
+    for sequence in sequences:
+        # Берём случайное изображение из связанной модели FrameSequence
+        random_frame = sequence.frame_sequences.order_by('?').first()
+        sequence_data.append({
+            'sequence': sequence,
+            'random_frame': random_frame,
+        })
+
+    return render(request, 'data_preparation/frame_sequence_list.html', {'sequence_data': sequence_data})
 
 def upload_video(request):
     if request.method == 'POST':

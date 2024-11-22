@@ -1,92 +1,54 @@
-from ultralytics import YOLO
-import cv2
-import math
+import numpy as np
+from ultralytics import SAM
+from PIL import Image
+import matplotlib.pyplot as plt
+import os
 
-# Замените 0 на путь к вашему видеофайлу
-cap = cv2.VideoCapture('000.mpg')
+# Загрузка модели SAM
+model = SAM("sam2.1_b.pt")
 
-# Убедитесь, что видео успешно открыто
-if not cap.isOpened():
-    print("Ошибка: не удалось открыть видеофайл")
-    exit()
+# Путь к вашему изображению
+image_path = "8f7c25d4-169b-43aa-91a3-6043ed46f60a.jpg"
 
-# Настройка ширины и высоты кадра (если необходимо)
-cap.set(3, 640)
-cap.set(4, 480)
+# Загрузка изображения
+image = Image.open(image_path)
 
-# Загрузка модели YOLO
-model = YOLO("best.pt")
+# Выполнение сегментации
+results = model.predict(image)
 
-# Имена классов объектов
-classNames = [
-    "adenoma",
-    "duodenum",
-    "papilla_maj",
-    "antrum",
-    "angiectasis",
-    "mouthpiece",
-    "tongue",
-    "exesa",
-    "pylorus",
-    "oesophagus",
-    "ampulla_duodeni",
-    "gastroesophageal_junction",
-    "foam",
-    "palate",
-    "pharynx",
-    "vestibular_fold",
-    "angulus ventriculi",
-    "epiglottis",
-    "teeth",
-    "phlebectasia"
-]
+# Проверяем результаты
+if isinstance(results, list) and len(results) > 0:
+    # Извлекаем первый результат
+    first_result = results[0]
 
+    # Проверяем наличие масок
+    if first_result.masks is not None and hasattr(first_result.masks, "data"):
+        # Маски находятся в first_result.masks.data
+        masks = first_result.masks.data.cpu().numpy()  # Преобразуем тензоры в массивы NumPy
 
-while True:
-    success, img = cap.read()
-    
-    # Проверка успешного чтения кадра. Если достигнут конец видео, выходим из цикла
-    if not success:
-        print("Конец видео")
-        break
+        # Проверяем размерность масок
+        if masks.ndim == 3:  # Ожидаем (количество масок, высота, ширина)
+            print(f"Detected {masks.shape[0]} masks")
 
-    # Получение результатов с модели YOLO
-    results = model(img, stream=True)
+            # Создаем папку для сохранения масок
+            save_dir = "segmented_masks"
+            os.makedirs(save_dir, exist_ok=True)
 
-    # Обработка результатов
-    for r in results:
-        boxes = r.boxes
-        for box in boxes:
-            # Координаты ограничивающего прямоугольника
-            x1, y1, x2, y2 = box.xyxy[0]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)  # Преобразование в целые значения
+            # Визуализация и сохранение каждой маски
+            for i, mask in enumerate(masks):
+                plt.figure(figsize=(10, 10))
+                plt.imshow(mask, cmap="jet")
+                plt.axis("off")
+                plt.title(f"Mask {i + 1}")
+                plt.show()
 
-            # Рисуем прямоугольник на изображении
-            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
-
-            # Доверие (confidence)
-            confidence = math.ceil((box.conf[0] * 100)) / 100
-            print("Confidence --->", confidence)
-
-            # Имя класса
-            cls = int(box.cls[0])
-            print("Class name -->", classNames[cls])
-
-            # Выводим детали объекта на изображении
-            org = [x1, y1]
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
-
-            cv2.putText(img, classNames[cls], org, font, fontScale, color, thickness)
-
-    # Отображение изображения с наложенными результатами
-    cv2.imshow('Video', img)
-
-    # Нажмите 'q', чтобы выйти из просмотра видео
-    if cv2.waitKey(55) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+                # Сохранение маски в файл
+                mask_path = os.path.join(save_dir, f"mask_{i + 1}.png")
+                plt.imsave(mask_path, mask, cmap="jet")
+                print(f"Mask {i + 1} saved to {mask_path}")
+        else:
+            print("Unexpected masks shape:", masks.shape)
+    else:
+        print("No masks found in the result.")
+else:
+    print("No results found.")

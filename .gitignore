@@ -72,3 +72,7 @@ medical_segmentation/best.pt
 medical_segmentation/yolov8n.pt
 medical_segmentation/000.mpg
 medical_segmentation/fonts
+medical_segmentation/8f7c25d4-169b-43aa-91a3-6043ed46f60a.jpg
+medical_segmentation/FastSAM-s.pt
+medical_segmentation/sam2.1_b.pt
+medical_segmentation/segmented_masks
