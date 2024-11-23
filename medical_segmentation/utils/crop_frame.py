@@ -1,32 +1,27 @@
 from PIL import Image
-import io
+from io import BytesIO
 
-def crop_frame(file, left, top, right, bottom):
+def crop_frame(image_file, left_crop, top_crop, right_crop, bottom_crop, width, height):
     """
-    Обрезает изображение согласно параметрам кропа.
-    :param file: Файл изображения (InMemoryUploadedFile)
-    :param left: Слева (пиксели)
-    :param top: Сверху (пиксели)
-    :param right: Справа (пиксели)
-    :param bottom: Снизу (пиксели)
-    :return: Новый обрезанный файл изображения
+    Обрезает изображение и изменяет его размер до указанных ширины и высоты.
     """
-    # Открываем изображение из файла
-    img = Image.open(file)
+    image = Image.open(image_file)
 
-    # Вычисляем размеры обрезки
-    width, height = img.size
-    crop_box = (
-        left,
-        top,
-        width - right,
-        height - bottom
-    )
-    img_cropped = img.crop(crop_box)
+    # Применение обрезки
+    cropped_image = image.crop((
+        left_crop,
+        top_crop,
+        image.width - right_crop,
+        image.height - bottom_crop
+    ))
 
-    # Сохраняем обрезанное изображение в память
-    output = io.BytesIO()
-    img_cropped.save(output, format=img.format)
+    # Изменение размера с использованием LANCZOS
+    resized_image = cropped_image.resize((width, height), Image.Resampling.LANCZOS)
+
+    # Сохранение изображения в память
+    output = BytesIO()
+    resized_image.save(output, format=image.format)
     output.seek(0)
 
     return output
+

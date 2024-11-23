@@ -67,5 +67,7 @@ class FrameSequenceForm(forms.Form):
     right_crop = forms.IntegerField(required=False, initial=0, label="Right Crop")
     top_crop = forms.IntegerField(required=False, initial=0, label="Top Crop")
     bottom_crop = forms.IntegerField(required=False, initial=0, label="Bottom Crop")
+    width = forms.IntegerField(required=False, initial=0, label="Width")
+    height = forms.IntegerField(required=False, initial=0, label="Height")
 
         

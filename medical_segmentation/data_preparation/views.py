@@ -1,7 +1,9 @@
+from io import BytesIO
 import shutil
-import uuid
 import os
+from PIL import Image, ImageOps
 from django.shortcuts import get_object_or_404, render, redirect
+from django.core.files.base import ContentFile
 from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.db.models import Count
@@ -15,21 +17,21 @@ from django.http import JsonResponse
 import logging
 logger = logging.getLogger(__name__)
 
-def image_list(request):
-    if request.method == 'POST':
-        if 'delete_selected' in request.POST:
-            image_ids = request.POST.getlist('images')
-            for image_id in image_ids:
-                image = ImageUpload.objects.get(id=image_id)
-                image.delete()
-        elif 'delete_single' in request.POST:
-            image_id = request.POST.get('delete_single')
-            image = ImageUpload.objects.get(id=image_id)
-            image.delete()
-        return redirect('data_preparation:image_list')
+# def image_list(request):
+#     if request.method == 'POST':
+#         if 'delete_selected' in request.POST:
+#             image_ids = request.POST.getlist('images')
+#             for image_id in image_ids:
+#                 image = ImageUpload.objects.get(id=image_id)
+#                 image.delete()
+#         elif 'delete_single' in request.POST:
+#             image_id = request.POST.get('delete_single')
+#             image = ImageUpload.objects.get(id=image_id)
+#             image.delete()
+#         return redirect('data_preparation:image_list')
     
-    images = ImageUpload.objects.all()
-    return render(request, 'data_preparation/image_list.html', {'images': images})
+#     images = ImageUpload.objects.all()
+#     return render(request, 'data_preparation/image_list.html', {'images': images})
 
 def upload_multiple_images(request):
     if request.method == 'POST':
@@ -41,6 +43,8 @@ def upload_multiple_images(request):
             right_crop = form.cleaned_data['right_crop'] or 0
             top_crop = form.cleaned_data['top_crop'] or 0
             bottom_crop = form.cleaned_data['bottom_crop'] or 0
+            width = form.cleaned_data['width'] or 640  # Значение по умолчанию
+            height = form.cleaned_data['height'] or 640  # Значение по умолчанию
 
             # Создаём новую последовательность
             sequence = Sequences.objects.create(
@@ -56,20 +60,32 @@ def upload_multiple_images(request):
 
             # Обрабатываем множественные файлы
             files = request.FILES.getlist('images')
+            index = 1  # Начальный индекс
             for f in files:
-                # Обрезаем изображение
-                cropped_image = crop_frame(f, left_crop, top_crop, right_crop, bottom_crop)
+                # Обрезаем и изменяем размер изображения
+                cropped_image = crop_frame(f, left_crop, top_crop, right_crop, bottom_crop, width, height)
 
-                # Генерация уникального имени файла
-                ext = f.name.split('.')[-1]
-                new_filename = f"{uuid.uuid4()}.{ext}"
+                # Генерация имени файла с лидирующими нулями
+                filename = f"{str(index).zfill(5)}.{f.name.split('.')[-1]}"
 
+                # Формирование вложенного пути
+                folder_path = os.path.join("novideo", features)
+                full_path = os.path.join(folder_path, filename)
+
+                # Убедимся, что папки существуют
+                os.makedirs(os.path.join("media", folder_path), exist_ok=True)
+
+                # Создаем объект FrameSequence
                 frame_instance = FrameSequence(
                     sequences=sequence,
                     frame_file=None  # Временно None
                 )
-                frame_instance.frame_file.save(new_filename, cropped_image, save=False)  # Сохраняем файл
+
+                # Сохраняем файл по указанному пути
+                frame_instance.frame_file.save(full_path, ContentFile(cropped_image.read()), save=False)
                 frame_instance.save()
+
+                index += 1  # Увеличиваем индекс
 
             return redirect('data_preparation:frame_sequence_list')
     else:

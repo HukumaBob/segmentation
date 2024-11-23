@@ -1,32 +1,101 @@
-<!-- templates/about/tech.html -->
-{% extends "base.html" %}
-{% block title %}Технологии{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
 {% block content %}
-{% comment %} Колонки с отступом сверху и снизу {% endcomment %}
-<div class="row">
-  <h1>Вот что я умею</h1>
-  {% comment %}
-    Боковой блок со списком технологий 
-    Займет всю ширину блока на мобильном
-    и 25% при размерах экрана ≥768px
-  {% endcomment %}
-  <aside class="col-12 col-md-3">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item">
-        Python
-      </li>
-      <li class="list-group-item">
-        Django
-      </li>
-    </ul>
-  </aside>
-  {% comment %}
-    Статья  
-    Займет всю ширину блока на мобильном
-    и 75% при размерах экрана ≥768px
-  {% endcomment %}
-  <article class="col-12 col-md-9">
-    <p>Текст страницы "Технологии"</p>
-  </article>
+<div class="container mt-5">
+
+    <h4>Project: Creating an Annotation Dataset for Endoscopic Images and Training a Neural Network</h4>
+
+    <section class="mt-4">
+        <h5 class="mb-3">Project Overview</h5>
+        <p>The goal of this project is to <strong>create an annotated dataset for images step-by-step</strong> based on endoscopic procedures, such as:</p>
+        <ul class="list-group mb-3">
+            <li class="list-group-item">Gastroscopy</li>
+            <li class="list-group-item">Colonoscopy</li>
+            <li class="list-group-item">Bronchoscopy</li>
+            <li class="list-group-item">Endoscopic Ultrasound (EUS)</li>
+        </ul>
+        <p>The annotated dataset will be used to <strong>train a neural network</strong> for automatic detection of:</p>
+        <ol class="list-group list-group-numbered">
+            <li class="list-group-item">Anatomical landmarks</li>
+            <li class="list-group-item">Pathological findings</li>
+            <li class="list-group-item">Quality assessment of the procedure</li>
+        </ol>
+        <p>This project supports both <strong>offline mode</strong> (post-processing) and <strong>online mode</strong> (real-time analysis).</p>
+        <p><strong>Image Segmentation</strong> is powered by <a href="https://arxiv.org/abs/2408.00714" target="_blank">SAM2</a>. <br>
+           <strong>Training and Detection</strong> are performed using YOLO v11.</p>
+    </section>
+
+    <section class="mt-4">
+        <h5 class="mb-3">Project Structure</h5>
+        <p>The project consists of the following steps:</p>
+        <ul class="list-group mb-3">
+            <li class="list-group-item"><strong>Image Annotation:</strong> Use an interface to create and extrapolate masks across image sequences.</li>
+            <li class="list-group-item"><strong>Mask Generation and Extrapolation:</strong> Masks are manually created for a single frame and then extrapolated to the rest of the frames.</li>
+            <li class="list-group-item"><strong>Tags and Mask Management:</strong> Masks are linked to anatomical landmarks or pathologies and stored in the database.</li>
+            <li class="list-group-item"><strong>Data Preparation for Model Training:</strong> The final dataset is used to train a neural network.</li>
+        </ul>
+    </section>
+
+    <section class="mt-4">
+        <h5 class="mb-3">Key Features</h5>
+        <div class="accordion" id="keyFeaturesAccordion">
+            <div class="accordion-item">
+                <h6 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#feature1" aria-expanded="true">
+                        Mask Generation for Individual Frames
+                    </button>
+                </h6>
+                <div id="feature1" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                        Users select a specific frame and create a mask. Masks are saved in the database and displayed on the annotated images.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h6 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#feature2">
+                        Extrapolation of Masks to All Frames
+                    </button>
+                </h6>
+                <div id="feature2" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        An extrapolation model automatically applies annotations across all frames.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h6 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#feature3">
+                        Mask Display and Management
+                    </button>
+                </h6>
+                <div id="feature3" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        Masks can be toggled for visibility, deleted, or managed within the sequence.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mt-4">
+        <h5 class="mb-3">Installation and Setup</h5>
+        <p>To set up the project:</p>
+        <ol class="list-group list-group-numbered">
+            <li class="list-group-item">Install dependencies using <code>pip install -r requirements.txt</code>.</li>
+            <li class="list-group-item">Configure the database and run migrations.</li>
+            <li class="list-group-item">Run the local server with <code>python manage.py runserver</code>.</li>
+        </ol>
+    </section>
+
+    <section class="mt-4">
+        <h5 class="mb-3">Technologies Used</h5>
+        <p>The project uses the following technologies:</p>
+        <ul class="list-group">
+            <li class="list-group-item"><strong>SAM2</strong>: For image segmentation (<a href="https://arxiv.org/abs/2408.00714" target="_blank">Read more</a>).</li>
+            <li class="list-group-item"><strong>YOLO v11</strong>: For object detection and training.</li>
+        </ul>
+    </section>
 </div>
 {% endblock %}

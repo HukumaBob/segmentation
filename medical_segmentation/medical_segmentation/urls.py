@@ -11,6 +11,7 @@ urlpatterns = [
 # Подключение маршрутов для i18n
 urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
+    path('', include('about.urls')),
     path('', include('data_preparation.urls')),
     path('', include('segmentation.urls')),
     path('', include('nettrain.urls')),

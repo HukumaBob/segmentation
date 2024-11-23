@@ -2,20 +2,20 @@
 {% load i18n %}
 <nav id="navbar" class="navbar navbar-expand-lg {% if request.COOKIES.theme == 'dark' %}dark-mode{% else %}navbar-light bg-light{% endif %}">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/">{% trans "Object Segmentation" %}</a>
+    <a class="navbar-brand" href="{% url 'about:tech' %}">{% trans "About" %}</a>
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'data_preparation:frame_sequence_list' %}">{% trans "Upload Multiple Images" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:upload_multiple_images' %}">{% trans "Upload Multiple Images" %}</a>
         </li>         
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'data_preparation:image_list' %}">{% trans "Image List" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:upload_video' %}">{% trans "Upload Video" %}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'data_preparation:upload_video' %}">{% trans "Upload video" %}</a>
+          <a class="nav-link" href="{% url 'data_preparation:frame_sequence_list' %}">{% trans "Image List" %}</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'nettrain:start_training' %}">{% trans "Train model" %}</a>
+          <a class="nav-link" href="{% url 'nettrain:start_training' %}">{% trans "Train Model" %}</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'view_result:view_video' %}">{% trans "Result" %}</a>

@@ -76,3 +76,4 @@ medical_segmentation/8f7c25d4-169b-43aa-91a3-6043ed46f60a.jpg
 medical_segmentation/FastSAM-s.pt
 medical_segmentation/sam2.1_b.pt
 medical_segmentation/segmented_masks
+medical_segmentation/sam2.1_l.pt
