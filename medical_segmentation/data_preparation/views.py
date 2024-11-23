@@ -7,31 +7,50 @@ from django.core.files.base import ContentFile
 from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.db.models import Count
+from django.urls import reverse
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from utils.crop_frame import crop_frame
-from .forms import FrameSequenceForm, VideoForm
-from .models import ImageUpload, Video, Sequences
+from .forms import FrameSequenceForm, VideoForm, TagForm
+from .models import Video, Sequences, Tag
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
 from django.http import JsonResponse
 import logging
 logger = logging.getLogger(__name__)
 
-# def image_list(request):
-#     if request.method == 'POST':
-#         if 'delete_selected' in request.POST:
-#             image_ids = request.POST.getlist('images')
-#             for image_id in image_ids:
-#                 image = ImageUpload.objects.get(id=image_id)
-#                 image.delete()
-#         elif 'delete_single' in request.POST:
-#             image_id = request.POST.get('delete_single')
-#             image = ImageUpload.objects.get(id=image_id)
-#             image.delete()
-#         return redirect('data_preparation:image_list')
-    
-#     images = ImageUpload.objects.all()
-#     return render(request, 'data_preparation/image_list.html', {'images': images})
+# Просмотр всех тегов
+class TagListView(ListView):
+    model = Tag
+    template_name = 'data_preparation/tag_list.html'
+    context_object_name = 'tags'
+
+# Создание нового тега
+class TagCreateView(CreateView):
+    model = Tag
+    form_class = TagForm
+    template_name = 'data_preparation/tag_form.html'
+
+    def get_success_url(self):
+        return reverse('data_preparation:tag_list')
+
+# Редактирование тега
+class TagUpdateView(UpdateView):
+    model = Tag
+    form_class = TagForm
+    template_name = 'data_preparation/tag_form.html'
+
+    def get_success_url(self):
+        return reverse('data_preparation:tag_list')
+
+# Удаление тега
+class TagDeleteView(DeleteView):
+    model = Tag
+    template_name = 'data_preparation/tag_confirm_delete.html'
+    context_object_name = 'tag'
+
+    def get_success_url(self):
+        return reverse('data_preparation:tag_list')
 
 def upload_multiple_images(request):
     if request.method == 'POST':

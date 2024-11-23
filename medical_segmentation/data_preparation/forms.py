@@ -70,4 +70,11 @@ class FrameSequenceForm(forms.Form):
     width = forms.IntegerField(required=False, initial=0, label="Width")
     height = forms.IntegerField(required=False, initial=0, label="Height")
 
+class TagForm(forms.ModelForm):
+    class Meta:
+        model = Tag
+        fields = ['category', 'name', 'code', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
         

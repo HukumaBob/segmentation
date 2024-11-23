@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Tag List</h2>
+    <a href="{% url 'data_preparation:tag_add' %}" class="btn btn-primary mb-3">Add New Tag</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Category</th>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tag in tags %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ tag.category }}</td>
+                <td>{{ tag.name }}</td>
+                <td>{{ tag.code }}</td>
+                <td>{{ tag.description|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'data_preparation:tag_edit' tag.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'data_preparation:tag_delete' tag.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No tags found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

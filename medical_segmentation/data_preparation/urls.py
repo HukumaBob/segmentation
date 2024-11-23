@@ -11,5 +11,9 @@ urlpatterns = [
     path('create-frame-sequence/<str:video_id>/', views.create_frame_sequence, name='create_frame_sequence'),
     path('view-frame-sequence/<str:video_id>/', views.view_frame_sequence, name='view_frame_sequence'),
     path('sequence/<int:sequence_id>/delete/', views.delete_sequence, name='delete_sequence'),
-    path('', views.frame_sequence_list, name='frame_sequence_list'),
+    # path('', views.frame_sequence_list, name='frame_sequence_list'),
+    path('', views.TagListView.as_view(), name='tag_list'),
+    path('add/', views.TagCreateView.as_view(), name='tag_add'),
+    path('<int:pk>/edit/', views.TagUpdateView.as_view(), name='tag_edit'),
+    path('<int:pk>/delete/', views.TagDeleteView.as_view(), name='tag_delete'),    
 ]
