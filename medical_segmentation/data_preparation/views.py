@@ -296,14 +296,20 @@ def delete_sequence(request, sequence_id):
         # Удаляем последовательность из базы данных
         sequence.delete()
 
-        # Возвращаем обновленные последовательности для данного видео
-        sequences = [
-            {'id': seq.id, 'features': seq.features, 'start_time': seq.start_time, 'duration': seq.duration}
-            for seq in video.sequences.all()
-        ]
+        # Если у последовательности было связанное видео, обновляем его последовательности
+        if video:
+            sequences = [
+                {'id': seq.id, 'features': seq.features, 'start_time': seq.start_time, 'duration': seq.duration}
+                for seq in video.sequences.all()
+            ]
+        else:
+            # Если видео нет, возвращаем пустой список
+            sequences = []
+
         return JsonResponse({'status': 'success', 'sequences': sequences})
     except Exception as e:
         return JsonResponse({'status': 'failed', 'error': str(e)})
+
 
 def delete_frames_directory(sequence):
     """
