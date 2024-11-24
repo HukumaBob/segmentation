@@ -99,6 +99,13 @@ class DatasetSplitForm(forms.Form):
         initial=10,
         help_text="Процент данных для валидации"
     )
+    sequences = forms.ModelMultipleChoiceField(
+        queryset=Sequences.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label="Выберите последовательности (Sequences)",
+        help_text="Укажите последовательности, которые войдут в датасет."
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -115,8 +122,9 @@ class DatasetSplitForm(forms.Form):
                 "Сумма процентов обучения, валидации и тестирования должна быть равна 100."
             )
         return cleaned_data
+
     def clean_dataset_name(self):
         name = self.cleaned_data.get("dataset_name")
         if Dataset.objects.filter(name=name).exists():
             raise forms.ValidationError(f"Датасет с названием '{name}' уже существует.")
-        return name    
+        return name

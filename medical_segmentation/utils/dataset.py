@@ -10,13 +10,14 @@ from segmentation.models import FrameSequence, Mask
 ROUND_COORDINATES = 8
 
 
-def prepare_dataset(dataset_name, train_percentage, val_percentage):
+def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_sequences):
     """
     Функция для подготовки датасета в форматах YOLO и COCO.
 
     :param dataset_name: Название датасета
     :param train_percentage: Процент данных для обучения
     :param val_percentage: Процент данных для валидации
+    :param selected_sequences: QuerySet или список выбранных FrameSequence
     """
     # Проверяем, существует ли датасет с таким именем
     dataset, created = Dataset.objects.get_or_create(name=dataset_name)
@@ -34,8 +35,9 @@ def prepare_dataset(dataset_name, train_percentage, val_percentage):
     for path in [train_images_path, train_labels_path, val_images_path, val_labels_path, test_images_path, test_labels_path]:
         os.makedirs(path, exist_ok=True)
 
-    # Получаем кадры
-    frame_sequences = list(FrameSequence.objects.filter(masks__isnull=False).distinct())
+    # Фильтруем кадры на основе выбранных последовательностей
+    frame_sequences = FrameSequence.objects.filter(sequences__id__in=selected_sequences).filter(masks__isnull=False).distinct()
+    frame_sequences = list(frame_sequences)  # Преобразуем в список
     random.shuffle(frame_sequences)
 
     # Разделяем данные

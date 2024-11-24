@@ -14,6 +14,28 @@
             {{ form.dataset_name|add_class:"form-control" }}            
             <div class="form-text">{{ form.dataset_name.help_text }}</div>
         </div>
+        <div class="mb-4">
+            <label class="form-label">{{ form.sequences.label }}</label>
+            <div class="form-text mb-2">{{ form.sequences.help_text }}</div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Выбрать</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sequence in form.sequences %}
+                    <tr>
+                        <td>{{ sequence.tag }}</td>  <!-- чекбокс -->
+                        <td>{{ sequence.choice_label }}</td>  <!-- название Sequence -->
+                        <td>{{ sequence.choice_value }}</td> <!-- пример: описание Sequence -->
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>        
 
         <!-- Поля для процентов -->
         <div class="row">

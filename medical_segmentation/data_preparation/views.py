@@ -345,9 +345,10 @@ def prepare_dataset_view(request):
             dataset_name = form.cleaned_data['dataset_name']
             train_percentage = form.cleaned_data['train_percentage']
             val_percentage = form.cleaned_data['val_percentage']
-            test_percentage = 100 - train_percentage - val_percentage
+            selected_sequences = form.cleaned_data['sequences']  # Получаем выбранные Sequences
 
             # Проверяем, чтобы сумма процентов была равна 100
+            test_percentage = 100 - train_percentage - val_percentage
             if train_percentage + val_percentage + test_percentage != 100:
                 return JsonResponse({
                     "status": "failed",
@@ -355,13 +356,18 @@ def prepare_dataset_view(request):
                 })
 
             try:
-                # Запускаем команду подготовки датасета
-                prepare_dataset(dataset_name, train_percentage, val_percentage)
+                # Запускаем функцию подготовки датасета с передачей выбранных Sequences
+                prepare_dataset(
+                    dataset_name=dataset_name,
+                    train_percentage=train_percentage,
+                    val_percentage=val_percentage,
+                    selected_sequences=selected_sequences
+                )
                 return JsonResponse({"status": "success", "message": "Датасет успешно подготовлен."})
-            except subprocess.CalledProcessError as e:
+            except Exception as e:
                 return JsonResponse({"status": "failed", "message": f"Ошибка: {str(e)}"})
 
     else:
         form = DatasetSplitForm()
 
-    return render(request, "data_preparation/prepare_dataset.html", {"form": form})    
+    return render(request, "data_preparation/prepare_dataset.html", {"form": form})
