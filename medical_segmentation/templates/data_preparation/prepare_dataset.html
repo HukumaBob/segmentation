@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load form_filters %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Подготовка датасета</h1>
+    <form method="post" id="dataset-form" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <!-- Поле для названия датасета -->
+        <div class="mb-4">
+            <label for="id_dataset_name" class="form-label">{{ form.dataset_name.label }}</label>
+            {{ form.dataset_name|add_class:"form-control" }}            
+            <div class="form-text">{{ form.dataset_name.help_text }}</div>
+        </div>
+
+        <!-- Поля для процентов -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="id_train_percentage" class="form-label">{{ form.train_percentage.label }}</label>
+                    {{ form.train_percentage|add_class:"form-control" }}
+                    <div class="form-text">{{ form.train_percentage.help_text }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="id_val_percentage" class="form-label">{{ form.val_percentage.label }}</label>
+                    {{ form.val_percentage|add_class:"form-control" }}
+                    <div class="form-text">{{ form.val_percentage.help_text }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="test-percentage" class="form-label">Процент тестирования</label>
+                    <input type="text" id="test-percentage" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ошибка процентов -->
+        <div id="percentage-error" class="mt-2 text-center text-danger"></div>
+
+        <!-- Кнопка запуска -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Запустить</button>
+        </div>
+    </form>
+
+    <!-- Результат -->
+    <div id="result" class="mt-4"></div>
+</div>
+
+<script>
+    // Функция вычисления процента тестирования
+    function calculateTestPercentage() {
+        const train = parseInt(document.getElementById("id_train_percentage").value) || 0;
+        const val = parseInt(document.getElementById("id_val_percentage").value) || 0;
+        const test = Math.max(0, 100 - train - val);
+        document.getElementById("test-percentage").value = test;
+
+        // Проверяем, чтобы сумма train + val + test была равна 100
+        const total = train + val + test;
+        const errorDiv = document.getElementById("percentage-error");
+
+        if (total !== 100) {
+            errorDiv.textContent = "Ошибка: сумма процентов должна быть равна 100.";
+        } else {
+            errorDiv.textContent = ""; // Очищаем сообщение об ошибке
+        }
+    }
+
+    // Обработчики для пересчёта процентов
+    document.getElementById("id_train_percentage").addEventListener("input", calculateTestPercentage);
+    document.getElementById("id_val_percentage").addEventListener("input", calculateTestPercentage);
+
+    // Обработка отправки формы
+    document.getElementById("dataset-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById("result");
+
+        // Сброс предыдущего результата
+        resultDiv.innerHTML = "";
+
+        fetch("", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success" role="alert">
+                        ${data.message}
+                    </div>`;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        ${data.message}
+                    </div>`;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Произошла ошибка: ${error.message}
+                </div>`;
+        });
+    });
+
+    // Инициализация начального значения для test_percentage
+    calculateTestPercentage();
+</script>
+{% endblock %}

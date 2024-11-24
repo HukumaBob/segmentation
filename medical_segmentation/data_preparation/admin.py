@@ -5,6 +5,7 @@ from .models import (
     TagsCategory,
     Tag,
     Video,
+    Dataset
     )
 
 @admin.register(TagsCategory)
@@ -42,3 +43,8 @@ class SequencesAdmin(admin.ModelAdmin):
 class VideoAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'description')
     search_fields = ('title',)   
+
+@admin.register(Dataset)
+class DatasetAdmin(admin.ModelAdmin):
+    list_display = ("name", "created_at", "description")
+    search_fields = ("name",)    

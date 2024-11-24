@@ -131,12 +131,6 @@ class Command(BaseCommand):
                     for bbox in bboxes:
                         x_center, y_center, width, height = bbox
 
-                        # Преобразуем координаты для нового размера изображения
-                        # x_center = round(x_center * new_width / original_width, ROUND_COORDINATES)
-                        # y_center = round(y_center * new_height / original_height, ROUND_COORDINATES)
-                        # width = round(width * new_width / original_width, ROUND_COORDINATES)
-                        # height = round(height * new_height / original_height, ROUND_COORDINATES)
-
                         # Фильтруем bounding boxes с размерами менее 1% от ширины или высоты изображения
                         if width >= 0.01 and height >= 0.01:
                             bounding_boxes.append((x_center, y_center, width, height))

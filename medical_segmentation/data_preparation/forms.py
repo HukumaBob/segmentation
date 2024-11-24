@@ -1,7 +1,7 @@
 from django import forms
 
 from segmentation.models import FrameSequence
-from .models import Tag, Sequences, Video
+from .models import Dataset, Tag, Sequences, Video
 from django.utils.translation import gettext_lazy as _
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -77,4 +77,46 @@ class TagForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
-        
+
+class DatasetSplitForm(forms.Form):
+    dataset_name = forms.CharField(
+        label="Название датасета",
+        max_length=100,
+        required=True,
+        help_text="Уникальное название для сохранения датасета."
+    )    
+    train_percentage = forms.IntegerField(
+        label="Процент обучения",
+        min_value=0,
+        max_value=100,
+        initial=80,
+        help_text="Процент данных для обучения"
+    )
+    val_percentage = forms.IntegerField(
+        label="Процент валидации",
+        min_value=0,
+        max_value=100,
+        initial=10,
+        help_text="Процент данных для валидации"
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        train = cleaned_data.get("train_percentage", 0)
+        val = cleaned_data.get("val_percentage", 0)
+
+        # Вычисляем test_percentage
+        test = max(0, 100 - train - val)
+        cleaned_data["test_percentage"] = test
+
+        # Проверяем, чтобы сумма train, val и test строго равнялась 100
+        if train + val + test != 100:
+            raise forms.ValidationError(
+                "Сумма процентов обучения, валидации и тестирования должна быть равна 100."
+            )
+        return cleaned_data
+    def clean_dataset_name(self):
+        name = self.cleaned_data.get("dataset_name")
+        if Dataset.objects.filter(name=name).exists():
+            raise forms.ValidationError(f"Датасет с названием '{name}' уже существует.")
+        return name    

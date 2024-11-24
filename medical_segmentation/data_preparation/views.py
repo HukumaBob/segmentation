@@ -1,7 +1,6 @@
-from io import BytesIO
 import shutil
 import os
-from PIL import Image, ImageOps
+import subprocess
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.files.base import ContentFile
 from django.views.decorators.http import require_POST
@@ -10,8 +9,9 @@ from django.db.models import Count
 from django.urls import reverse
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
+from utils.dataset import prepare_dataset
 from utils.crop_frame import crop_frame
-from .forms import FrameSequenceForm, VideoForm, TagForm
+from .forms import DatasetSplitForm, FrameSequenceForm, VideoForm, TagForm
 from .models import Video, Sequences, Tag
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
@@ -337,3 +337,31 @@ def delete_frames_directory(sequence):
 
     # Удаляем все объекты FrameSequence для данной последовательности
     frames.delete()
+
+def prepare_dataset_view(request):
+    if request.method == "POST":
+        form = DatasetSplitForm(request.POST)
+        if form.is_valid():
+            dataset_name = form.cleaned_data['dataset_name']
+            train_percentage = form.cleaned_data['train_percentage']
+            val_percentage = form.cleaned_data['val_percentage']
+            test_percentage = 100 - train_percentage - val_percentage
+
+            # Проверяем, чтобы сумма процентов была равна 100
+            if train_percentage + val_percentage + test_percentage != 100:
+                return JsonResponse({
+                    "status": "failed",
+                    "message": "Сумма всех процентов должна быть равна 100."
+                })
+
+            try:
+                # Запускаем команду подготовки датасета
+                prepare_dataset(dataset_name, train_percentage, val_percentage)
+                return JsonResponse({"status": "success", "message": "Датасет успешно подготовлен."})
+            except subprocess.CalledProcessError as e:
+                return JsonResponse({"status": "failed", "message": f"Ошибка: {str(e)}"})
+
+    else:
+        form = DatasetSplitForm()
+
+    return render(request, "data_preparation/prepare_dataset.html", {"form": form})    

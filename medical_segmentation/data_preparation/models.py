@@ -121,4 +121,10 @@ class Sequences(models.Model):
             frame.delete()
         super().delete(*args, **kwargs)
 
+class Dataset(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название датасета")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    description = models.TextField(blank=True, null=True, verbose_name="Описание")
 
+    def __str__(self):
+        return self.name
