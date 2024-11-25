@@ -77,3 +77,4 @@ medical_segmentation/FastSAM-s.pt
 medical_segmentation/sam2.1_b.pt
 medical_segmentation/segmented_masks
 medical_segmentation/sam2.1_l.pt
+medical_segmentation/exp10-new

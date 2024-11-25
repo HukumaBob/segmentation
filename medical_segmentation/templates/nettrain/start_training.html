@@ -12,6 +12,15 @@
 
         <!-- Заголовок для обязательных параметров -->
         <h4 class="mt-4">Required Parameters</h4>
+        <div class="col-md-12 mb-">
+            <label for="dataset_name" class="form-label">Dataset:</label>
+            <select class="form-select" id="dataset_name" name="dataset_name">
+                {% for dataset in datasets %}
+                    <option value="{{ dataset.name }}">{{ dataset.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
         <div class="row">
             <div class="col-md-3 mb-3">
                 <label for="model_name" class="form-label">Model Name:</label>

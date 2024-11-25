@@ -5,7 +5,7 @@ from ultralytics import YOLO  # Импортируем YOLO из ultralytics
 from django.conf import settings
 from nettrain.models import NeuralNetworkVersion
 
-def train_yolo_model(model_name, epochs, batch, img_size, **kwargs):
+def train_yolo_model(dataset_name, model_name, epochs, batch, img_size, **kwargs):
     """
     Функция для дообучения модели YOLOv8.
     
@@ -17,7 +17,7 @@ def train_yolo_model(model_name, epochs, batch, img_size, **kwargs):
     :return: Путь к обученной модели
     """
     # Путь к данным (YOLOv8 использует файл .yaml для описания датасета)
-    data_path = os.path.join(settings.MEDIA_ROOT, 'yolo_dataset', 'dataset.yaml')  # Убедитесь, что у вас есть файл .yaml
+    data_path = os.path.join(settings.MEDIA_ROOT, 'yolo_dataset', dataset_name, 'dataset.yaml')  # Убедитесь, что у вас есть файл .yaml
 
     # Путь для сохранения модели
     save_dir = os.path.join(settings.MEDIA_ROOT, 'trained_models')

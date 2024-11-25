@@ -7,7 +7,9 @@ from django.conf import settings
 from data_preparation.models import Dataset
 from segmentation.models import FrameSequence, Mask
 
-ROUND_COORDINATES = 8
+ROUND_COORDINATES = 4
+MINIMAL_BOX_WIDTH = 0.1
+MINIMAL_BOX_HEIGHT = 0.1
 
 
 def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_sequences):
@@ -127,7 +129,7 @@ def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_seq
             y_center = round((y + h / 2) / image_height, ROUND_COORDINATES)
             width = round(w / image_width, ROUND_COORDINATES)
             height = round(h / image_height, ROUND_COORDINATES)
-            if width >= 0.01 and height >= 0.01:
+            if width >= MINIMAL_BOX_WIDTH and height >= MINIMAL_BOX_HEIGHT:
                 bounding_boxes.append((x_center, y_center, width, height))
         return bounding_boxes
 
@@ -145,6 +147,7 @@ def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_seq
     yaml_data = {
         'train': train_images_path,
         'val': val_images_path,
+        'test': test_images_path,
         'names': list(category_map.keys())
     }
     yaml_path = os.path.join(dataset_path, 'dataset.yaml')
