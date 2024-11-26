@@ -12,16 +12,20 @@
 
         <!-- Заголовок для обязательных параметров -->
         <h4 class="mt-4">Required Parameters</h4>
-        <div class="col-md-12 mb-">
+        <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="model_description" class="form-label">Model description:</label>
+            <input type="text" class="form-control" id="model_description" name="model_description" 
+       placeholder="Краткое описание модели" maxlength="255" title="Введите краткое описание модели" required>
+        </div>
+        <div class="col-md-6 mb-3">
             <label for="dataset_name" class="form-label">Dataset:</label>
             <select class="form-select" id="dataset_name" name="dataset_name">
                 {% for dataset in datasets %}
                     <option value="{{ dataset.name }}">{{ dataset.name }}</option>
                 {% endfor %}
             </select>
-        </div>
-        
-        <div class="row">
+        </div>        
             <div class="col-md-3 mb-3">
                 <label for="model_name" class="form-label">Model Name:</label>
                 <select class="form-select" id="model_name" name="model_name">
@@ -46,7 +50,16 @@
         </div>
 
         <!-- Заголовок для опциональных параметров -->
-        <h4 class="mt-4">Optional Parameters</h4>
+        <div class="accordion" id="optionalParametersAccordion">
+            <!-- General Optional Parameters -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingGeneral">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
+                        General Optional Parameters
+                    </button>
+                </h2>
+                <div id="collapseGeneral" class="accordion-collapse collapse" aria-labelledby="headingGeneral" data-bs-parent="#optionalParametersAccordion">
+                    <div class="accordion-body">
         <div class="row">
             <!-- Первый ряд опциональных параметров -->
             <div class="col-md-6 mb-3">
@@ -54,17 +67,17 @@
                 <input type="text" class="form-control" id="data" name="data" placeholder="Path to dataset config">
                 <div class="form-text description">Path to the dataset configuration file (e.g., coco8.yaml).</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="time" class="form-label">Time:</label>
                 <input type="text" class="form-control" id="time" name="time" placeholder="Max training time in hours">
                 <div class="form-text description">Maximum training time in hours. Overrides epochs if set.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="patience" class="form-label">Patience:</label>
                 <input type="number" class="form-control" id="patience" name="patience" value="100">
                 <div class="form-text description">Epochs to wait without improvement before early stopping.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="save" class="form-label">Save:</label>
                 <select class="form-select" id="save" name="save">
                     <option value="TRUE">TRUE</option>
@@ -72,16 +85,12 @@
                 </select>
                 <div class="form-text description">Enables saving of checkpoints and final model weights.</div>
             </div>
-        </div>
-
-        <div class="row">
-            <!-- Второй ряд опциональных параметров -->
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="save_period" class="form-label">Save Period:</label>
                 <input type="number" class="form-control" id="save_period" name="save_period" value="-1">
                 <div class="form-text description">Frequency of saving checkpoints in epochs. -1 disables.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="cache" class="form-label">Cache:</label>
                 <select class="form-select" id="cache" name="cache">
                     <option value="FALSE">FALSE</option>
@@ -90,36 +99,35 @@
                 </select>
                 <div class="form-text description">Enables caching: in RAM, on disk, or disables it.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="device" class="form-label">Device:</label>
                 <input type="text" class="form-control" id="device" name="device" placeholder="e.g., 0, 0,1, cpu">
                 <div class="form-text description">Specify computational device(s) for training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="workers" class="form-label">Workers:</label>
                 <input type="number" class="form-control" id="workers" name="workers" value="8">
                 <div class="form-text description">Number of worker threads for data loading.</div>
             </div>
-            <!-- Опциональные параметры - Продолжение -->
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="project" class="form-label">Project:</label>
                 <input type="text" class="form-control" id="project" name="project" placeholder="Project directory name">
                 <div class="form-text description">Name of the project directory where training outputs are saved.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="name" class="form-label">Name:</label>
                 <input type="text" class="form-control" id="name" name="name" placeholder="Training run name">
                 <div class="form-text description">Name of the training run for organizing outputs.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="exist_ok" class="form-label">Exist OK:</label>
                 <select class="form-select" id="exist_ok" name="exist_ok">
-                    <option value="FALSE">FALSE</option>
+                    <option value="FALSE" selected>FALSE</option>
                     <option value="TRUE">TRUE</option>
                 </select>
                 <div class="form-text description">Allows overwriting an existing project/name directory.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="pretrained" class="form-label">Pretrained:</label>
                 <select class="form-select" id="pretrained" name="pretrained">
                     <option value="TRUE">TRUE</option>
@@ -127,25 +135,25 @@
                 </select>
                 <div class="form-text description">Use pretrained model weights for faster training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="optimizer" class="form-label">Optimizer:</label>
                 <input type="text" class="form-control" id="optimizer" name="optimizer" placeholder="e.g., SGD, Adam, auto">
                 <div class="form-text description">Choice of optimizer for training. Defaults to auto.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="seed" class="form-label">Seed:</label>
                 <input type="number" class="form-control" id="seed" name="seed" value="0">
                 <div class="form-text description">Sets the random seed for reproducibility.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="deterministic" class="form-label">Deterministic:</label>
                 <select class="form-select" id="deterministic" name="deterministic">
-                    <option value="TRUE">TRUE</option>
+                    <option value="TRUE" selected>TRUE</option>
                     <option value="FALSE">FALSE</option>
                 </select>
                 <div class="form-text description">Forces deterministic algorithms for reproducibility.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="single_cls" class="form-label">Single Class:</label>
                 <select class="form-select" id="single_cls" name="single_cls">
                     <option value="FALSE">FALSE</option>
@@ -153,7 +161,7 @@
                 </select>
                 <div class="form-text description">Treat all classes as a single class during training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="rect" class="form-label">Rect:</label>
                 <select class="form-select" id="rect" name="rect">
                     <option value="FALSE">FALSE</option>
@@ -161,7 +169,7 @@
                 </select>
                 <div class="form-text description">Enables rectangular training for efficiency.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="cos_lr" class="form-label">Cosine LR:</label>
                 <select class="form-select" id="cos_lr" name="cos_lr">
                     <option value="FALSE">FALSE</option>
@@ -169,20 +177,20 @@
                 </select>
                 <div class="form-text description">Use cosine learning rate scheduler.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="close_mosaic" class="form-label">Close Mosaic:</label>
                 <input type="number" class="form-control" id="close_mosaic" name="close_mosaic" value="10">
                 <div class="form-text description">Disables mosaic augmentation in last N epochs.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="resume" class="form-label">Resume:</label>
                 <select class="form-select" id="resume" name="resume">
-                    <option value="FALSE">FALSE</option>
+                    <option value="FALSE" selected>FALSE</option>
                     <option value="TRUE">TRUE</option>
                 </select>
                 <div class="form-text description">Resume training from last checkpoint.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="amp" class="form-label">AMP:</label>
                 <select class="form-select" id="amp" name="amp">
                     <option value="TRUE">TRUE</option>
@@ -190,12 +198,12 @@
                 </select>
                 <div class="form-text description">Enables Automatic Mixed Precision (AMP) training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="fraction" class="form-label">Fraction:</label>
                 <input type="number" class="form-control" id="fraction" name="fraction" value="1.0">
                 <div class="form-text description">Fraction of the dataset to use for training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="profile" class="form-label">Profile:</label>
                 <select class="form-select" id="profile" name="profile">
                     <option value="FALSE">FALSE</option>
@@ -203,82 +211,82 @@
                 </select>
                 <div class="form-text description">Enables profiling of model speeds.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="freeze" class="form-label">Freeze:</label>
                 <input type="text" class="form-control" id="freeze" name="freeze" placeholder="Number of layers to freeze">
                 <div class="form-text description">Freeze first N layers or specified indices.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="lr0" class="form-label">Initial LR (lr0):</label>
                 <input type="number" class="form-control" id="lr0" name="lr0" value="0.01">
                 <div class="form-text description">Initial learning rate (e.g., SGD=1E-2, Adam=1E-3).</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="lrf" class="form-label">Final LR Fraction (lrf):</label>
                 <input type="number" class="form-control" id="lrf" name="lrf" value="0.01">
                 <div class="form-text description">Final learning rate as a fraction of initial rate.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="momentum" class="form-label">Momentum:</label>
                 <input type="number" class="form-control" id="momentum" name="momentum" value="0.937">
                 <div class="form-text description">Momentum factor for SGD or beta1 for Adam.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="weight_decay" class="form-label">Weight Decay:</label>
                 <input type="number" class="form-control" id="weight_decay" name="weight_decay" value="0.0005">
                 <div class="form-text description">L2 regularization term to prevent overfitting.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="warmup_epochs" class="form-label">Warmup Epochs:</label>
                 <input type="number" class="form-control" id="warmup_epochs" name="warmup_epochs" value="3.0">
                 <div class="form-text description">Epochs for learning rate warmup.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="warmup_momentum" class="form-label">Warmup Momentum:</label>
                 <input type="number" class="form-control" id="warmup_momentum" name="warmup_momentum" value="0.8">
                 <div class="form-text description">Initial momentum for warmup phase.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="warmup_bias_lr" class="form-label">Warmup Bias LR:</label>
                 <input type="number" class="form-control" id="warmup_bias_lr" name="warmup_bias_lr" value="0.1">
                 <div class="form-text description">Bias learning rate during warmup phase.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="box" class="form-label">Box Loss Weight:</label>
                 <input type="number" class="form-control" id="box" name="box" value="7.5">
                 <div class="form-text description">Weight for box loss in the loss function.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="cls" class="form-label">Classification Loss Weight:</label>
                 <input type="number" class="form-control" id="cls" name="cls" value="0.5">
                 <div class="form-text description">Weight for classification loss in the total loss.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="dfl" class="form-label">Distribution Focal Loss Weight:</label>
                 <input type="number" class="form-control" id="dfl" name="dfl" value="1.5">
                 <div class="form-text description">Weight for distribution focal loss.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="pose" class="form-label">Pose Loss Weight:</label>
                 <input type="number" class="form-control" id="pose" name="pose" value="12.0">
                 <div class="form-text description">Weight for pose loss in pose estimation models.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="kobj" class="form-label">Keypoint Objectness Loss Weight:</label>
                 <input type="number" class="form-control" id="kobj" name="kobj" value="2.0">
                 <div class="form-text description">Weight for keypoint objectness loss.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="label_smoothing" class="form-label">Label Smoothing:</label>
                 <input type="number" class="form-control" id="label_smoothing" name="label_smoothing" value="0.0">
                 <div class="form-text description">Applies label smoothing to improve generalization.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="nbs" class="form-label">Nominal Batch Size (NBS):</label>
                 <input type="number" class="form-control" id="nbs" name="nbs" value="64">
                 <div class="form-text description">Nominal batch size for loss normalization.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="overlap_mask" class="form-label">Overlap Mask:</label>
                 <select class="form-select" id="overlap_mask" name="overlap_mask">
                     <option value="TRUE">TRUE</option>
@@ -286,17 +294,17 @@
                 </select>
                 <div class="form-text description">Determines if object masks should be merged.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="mask_ratio" class="form-label">Mask Ratio:</label>
                 <input type="number" class="form-control" id="mask_ratio" name="mask_ratio" value="4">
                 <div class="form-text description">Downsample ratio for segmentation masks.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="dropout" class="form-label">Dropout Rate:</label>
                 <input type="number" class="form-control" id="dropout" name="dropout" value="0.0">
                 <div class="form-text description">Dropout rate for regularization in classification.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="val" class="form-label">Validation:</label>
                 <select class="form-select" id="val" name="val">
                     <option value="TRUE">TRUE</option>
@@ -304,21 +312,50 @@
                 </select>
                 <div class="form-text description">Enables validation during training.</div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="plots" class="form-label">Plots:</label>
                 <select class="form-select" id="plots" name="plots">
-                    <option value="FALSE">FALSE</option>
                     <option value="TRUE">TRUE</option>
+                    <option value="FALSE">FALSE</option>
                 </select>
                 <div class="form-text description">Generates and saves training/validation plots.</div>
             </div>
-
         </div>
-
-        <div class="d-grid">
+    </div>
+</div>
+</div>
+</div>
+        <div class="d-grid mt-3">
             <button type="submit" class="btn btn-primary btn-lg">Start Training</button>
         </div>
     </form>
+</div>
+<div class="mt-5">
+    <h2 class="text-center mb-4">Список существующих моделей</h2>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Дата создания</th>
+                <th>Описание</th>
+                <th>Теги</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model in trained_models %}
+                <tr>
+                    <td>{{ model.version_number }}</td>
+                    <td>{{ model.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ model.description|default:"-" }}</td>
+                    <td>{{ model.training_tags|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">Нет доступных моделей</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 <style>

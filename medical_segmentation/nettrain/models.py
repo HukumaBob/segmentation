@@ -10,7 +10,8 @@ class NeuralNetworkVersion(models.Model):
         max_length=20,
         verbose_name=_("Version Number")
     )
-    description = models.TextField(
+    description = models.CharField(
+        max_length=255,
         verbose_name=_("Description"),
         null=True,
         blank=True
@@ -27,6 +28,11 @@ class NeuralNetworkVersion(models.Model):
     )
     training_parameters = models.JSONField(
         verbose_name=_("Training Parameters"),
+        null=True,
+        blank=True
+    )    
+    training_tags = models.JSONField(
+        verbose_name=_("Training Tags"),
         null=True,
         blank=True
     )

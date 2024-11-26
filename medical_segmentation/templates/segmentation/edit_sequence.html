@@ -58,85 +58,94 @@
         </div>
     </div>
 <!-- Модальное окно -->
-<div id="frameModal" class="modal" data-frame-id="">
+<div id="frameModal" class="modal position-fixed" data-frame-id="">
     <div class="modal-content">
         <span class="close-btn">&times;</span>
-        
-        <!-- Контейнер для изображения и canvas -->
-        <div class="modal-image-wrapper">
-            <img id="modalImage" src="" alt="Frame Image" class="modal-image">
-            <canvas id="maskCanvas" class="mask-canvas"></canvas>
-        </div>
-        
-        <!-- Блок с информацией и выбором параметров -->
-        <div class="modal-info">
-            <div class="d-flex align-items-center mb-3">
-                <label for="modalFileName" class="form-label fw-bold me-2">
-                    {% trans "Sequence number" %}:
-                </label>
-                <h6 id="modalFileName" class="text-muted mb-0"></h6>
-            </div>
-            
-            <!-- Селекторы для тегов и цвета -->
-            <div class="row g-3 align-items-center mb-3">
-                <!-- Селектор категории тега -->
-                <div class="col-md-6">
-                    <label for="categorySelect" class="form-label fw-bold">{% trans "Select Category" %}:</label>
-                    <select id="categorySelect" class="form-select">
-                        <option value="">{% trans "Choose Category" %}</option>
-                        {% for category in categories %}
-                            <option value="{{ category.id }}">{{ category.tags_category }}</option>
-                        {% endfor %}
-                    </select>
-                </div>                
-                <!-- Селектор тега -->
-                <div class="col-md-6">
-                    <label for="tagSelect" class="form-label fw-bold">{% trans "Select Tag" %}:</label>
-                    <select id="tagSelect" class="form-select">
-                        <option value="">{% trans "Choose Tag" %}</option>
-                    </select>
-                </div>
-            
-                <!-- Селектор цвета -->
-                <div class="col-md-6">
-                    <label for="colorSelect" class="form-label fw-bold">{% trans "Mask Color" %}:</label>
-                    <input type="color" id="colorSelect" class="form-control form-control-color" value="#00FF00" title="{% trans 'Choose mask color' %}">
-                </div>
-            </div>
-            
-            
-            
-            <!-- Блок для списка масок -->
-            <div id="maskContainer" class="mb-3">
-                <h6 class="fw-bold mb-3">{% trans "Available Masks" %}</h6>
-            
-                <!-- Список масок -->
-                <div id="maskList" class="list-group">
-                    <!-- Пример динамически добавленного элемента -->
-                    <!-- <div class="list-group-item d-flex justify-content-between align-items-center">
-                         <span>Mask Name</span>
-                         <button class="btn btn-sm btn-outline-danger">{% trans "Remove" %}</button>
-                    </div> -->
-                </div>
-            </div>            
 
-            <div class="d-flex align-items-center gap-2 mt-3">
-                <!-- Кнопка экстраполяции масок -->
-                <button id="extrapolateBtn" class="btn btn-primary">
-                    {% trans "Create mask for all frames" %}
-                </button>
-            
-                <!-- Чекбокс для вычитания -->
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="subtractMaskCheckbox">
-                    <label class="form-check-label" for="subtractMaskCheckbox">
-                        {% trans "Subtract from existing masks" %}
-                    </label>
+        <!-- Flex-контейнер для карточек -->
+        <div class="d-flex w-100 h-100">
+            <!-- Карточка для изображения и canvas -->
+            <div class="card flex-grow-1" style="flex-basis: 75%;">
+                <div class="card-header">
+                    {% trans "Frame and Mask" %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="modal-image-wrapper ratio ratio-4x3">
+                        <img id="modalImage" src="" alt="Frame Image" class="modal-image">
+                        <canvas id="maskCanvas" class="mask-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка для информации и выбора параметров -->
+            <div class="card" style="flex-basis: 35%;">
+                <div class="card-header">
+                    {% trans "Settings and Masks" %}
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <label for="modalFileName" class="form-label fw-bold me-2">
+                            {% trans "Sequence number" %}:
+                        </label>
+                        <h6 id="modalFileName" class="text-muted mb-0"></h6>
+                    </div>
+
+                    <!-- Селекторы для тегов и цвета -->
+                    <div class="row g-3 align-items-center mb-3">
+                        <!-- Селектор категории тега -->
+                        <div class="col-md-6">
+                            <label for="categorySelect" class="form-label fw-bold">{% trans "Select Category" %}:</label>
+                            <select id="categorySelect" class="form-select">
+                                <option value="" selected>{% trans "Choose Category" %} </option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.tags_category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!-- Селектор тега -->
+                        <div class="col-md-6">
+                            <label for="tagSelect" class="form-label fw-bold">{% trans "Select Tag" %}:</label>
+                            <select id="tagSelect" class="form-select">
+                                <option value="" selected>{% trans "Choose Tag" %}</option>
+                            </select>
+                        </div>
+
+                        <!-- Селектор цвета -->
+                        <div class="col-md-6">
+                            <label for="colorSelect" class="form-label fw-bold">{% trans "Mask Color" %}:</label>
+                            <input type="color" id="colorSelect" class="form-control form-control-color" value="#00FF00" title="{% trans 'Choose mask color' %}">
+                        </div>
+                    </div>
+
+                    <!-- Блок для списка масок -->
+                    <div id="maskContainer" class="mb-3">
+                        <h6 class="fw-bold mb-3">{% trans "Available Masks" %}</h6>
+                        <!-- Список масок -->
+                        <div id="maskList" class="list-group">
+                            <!-- Пример динамически добавленного элемента -->
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mt-3">
+                        <!-- Кнопка экстраполяции масок -->
+                        <button id="extrapolateBtn" class="btn btn-primary">
+                            {% trans "Create mask for all frames" %}
+                        </button>
+
+                        <!-- Чекбокс для вычитания -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="subtractMaskCheckbox">
+                            <label class="form-check-label" for="subtractMaskCheckbox">
+                                {% trans "Subtract from existing masks" %}
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>    
+</div>
+
 <style>
     /* Тёмная тема */
     body.dark-mode .modal-content {
@@ -182,33 +191,30 @@
     /* Стили для модального окна */
     .modal {
         display: none;
-        position: fixed;
+        {% comment %} position: center; {% endcomment %}
         z-index: 200;
-        inset: 0; /* Альтернатива: top: 0; left: 0; width: 100%; height: 100%; */
+        {% comment %} inset: 0; {% endcomment %}
         background-color: rgba(0, 0, 0, 0.6);
     }
     
     .modal-content {
-        position: relative;
-        margin: 5% auto;
-        width: 100%;
-        height: 100%;
         display: flex;
-        flex-direction: row;
-        align-items: flex-start;
+        flex-direction: column;
+        max-width: 90%;
+        height: auto;
         padding: 10px;
-        background: var(--bs-body-bg, #fff); /* Тема по умолчанию */
-        color: var(--bs-body-color, #000);
-        border-radius: 0.5rem; /* Округленные углы для лучшего дизайна */
+        border-radius: 0.5rem;
     }
     
     .modal-image-wrapper {
-        width: 100%;
-        height: 100%;
+        position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
-        position: relative;
+        width: 100%;
+        height: auto;
+        background: #f9f9f9;
+        overflow: hidden;
     }
     
     .modal-image, .mask-canvas {
@@ -220,7 +226,6 @@
     }
     
     .modal-info {
-        width: 40%;
         padding-left: 15px;
         display: flex;
         flex-direction: column;

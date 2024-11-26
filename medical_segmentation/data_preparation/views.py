@@ -11,8 +11,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from utils.dataset import prepare_dataset
 from utils.crop_frame import crop_frame
-from .forms import DatasetSplitForm, FrameSequenceForm, VideoForm, TagForm
-from .models import Video, Sequences, Tag
+from .forms import DatasetSplitForm, DatasetTableForm, FrameSequenceForm, VideoForm, TagForm
+from .models import Dataset, Video, Sequences, Tag
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
 from django.http import JsonResponse
@@ -370,4 +370,11 @@ def prepare_dataset_view(request):
     else:
         form = DatasetSplitForm()
 
-    return render(request, "data_preparation/prepare_dataset.html", {"form": form})
+    # Получаем все существующие датасеты
+    datasets = Dataset.objects.all()        
+
+    return render(request, "data_preparation/prepare_dataset.html", {
+        "form": form,
+        'datasets': datasets,
+        'dataset_table_form': DatasetTableForm(),
+        })

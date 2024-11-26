@@ -128,3 +128,8 @@ class DatasetSplitForm(forms.Form):
         if Dataset.objects.filter(name=name).exists():
             raise forms.ValidationError(f"Датасет с названием '{name}' уже существует.")
         return name
+    
+class DatasetTableForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        fields = ['name', 'description']

@@ -10,6 +10,7 @@ class NeuralNetworkVersioneAdmin(admin.ModelAdmin):
         'description',
         'model_file',
         'created_at',
+        'training_tags',
         'training_parameters',
         'accuracy'
         )

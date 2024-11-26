@@ -1,6 +1,7 @@
 import os
-import uuid
 import pandas as pd
+import uuid
+import yaml
 from ultralytics import YOLO  # Импортируем YOLO из ultralytics
 from django.conf import settings
 from nettrain.models import NeuralNetworkVersion
@@ -55,19 +56,30 @@ def train_yolo_model(dataset_name, model_name, epochs, batch, img_size, **kwargs
         # Извлекаем значение mAP50 из последней строки
         mAP50 = df['metrics/mAP50(B)'].iloc[-1] if 'metrics/mAP50(B)' in df.columns else None
 
-    return model_save_path, mAP50
+    return model_save_path, mAP50, data_path
 
-def save_model_metadata(model_save_path, model_name, epochs, batch, img_size, accuracy):
+def save_model_metadata(model_description, data_path, model_save_path, model_name, epochs, batch, img_size, accuracy, **kwargs):
     """
     Сохраняем метаданные обученной модели в базе данных.
     
+    :param data_path: Путь к YAML-файлу с описанием датасета
     :param model_save_path: Путь к сохраненной модели
     :param model_name: Название модели
     :param epochs: Количество эпох
     :param batch: Размер батча
     :param img_size: Размер изображения
     :param accuracy: Точность модели
+    :param kwargs: Дополнительные параметры обучения
     """
+    # Загружаем теги из dataset.yaml
+    try:
+        with open(data_path, 'r') as f:
+            dataset_config = yaml.safe_load(f)
+            training_tags = dataset_config.get('names', [])  # Извлекаем список тегов (названия классов)
+    except Exception as e:
+        print(f"Error loading data.yaml: {e}")
+        training_tags = []
+
     # Определяем номер версии
     last_version = NeuralNetworkVersion.objects.filter(name=model_name).order_by('-version_number').first()
     if last_version:
@@ -80,18 +92,22 @@ def save_model_metadata(model_save_path, model_name, epochs, batch, img_size, ac
     else:
         new_version_number = 1  # Если версий не было, начинаем с 1
 
+    # Объединяем стандартные параметры обучения с дополнительными
+    training_parameters = {
+        'epochs': epochs,
+        'batch': batch,
+        'img_size': img_size
+    }
+    training_parameters.update(kwargs)  # Добавляем дополнительные параметры из kwargs
+
     # Создаем новую запись с новым номером версии
     model_version = NeuralNetworkVersion.objects.create(
         name=model_name,
         version_number=f"{model_name}_v{new_version_number}",
-        description=f"Модель дообучена на {epochs} эпохах",
+        description=model_description,
         model_file=model_save_path,
-        training_parameters={
-            'epochs': epochs,
-            'batch': batch,
-            'img_size': img_size
-        },
+        training_parameters=training_parameters,  # Передаем объединенный словарь
+        training_tags=training_tags,  # Сохраняем теги в базе данных
         accuracy=accuracy  # Передаем реальную точность
     )
     model_version.save()
-
