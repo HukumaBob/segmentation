@@ -21,6 +21,7 @@ def view_video(request):
         model_id = request.POST.get('model_id')
         model_instance = NeuralNetworkVersion.objects.get(id=model_id)
         model_file_path = model_instance.model_file.path
+        class_names = model_instance.training_tags
 
         # Загружаем модель YOLO
         model = YOLO(model_file_path)
@@ -60,7 +61,8 @@ def view_video(request):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 255), 2)
                     cls = int(box.cls[0])
                     confidence = box.conf[0] * 100
-                    class_name = "Fuck!"  # Замените это на правильное имя класса
+                    # Получаем имя класса из списка class_names по индексу
+                    class_name = class_names[cls] if cls < len(class_names) else "Unknown"
 
                     # Добавление текста на кадр
                     cv2.putText(frame, f"{class_name} {confidence:.2f}%", (x1, y1 - 10),

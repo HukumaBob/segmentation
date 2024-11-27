@@ -1,15 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Обработанное видео</h2>
+    <!-- Заголовок с небольшим отступом -->
+    <h2 class="mb-4 text-center">Обработанное видео</h2>
 
-    <!-- Видео с результатами распознавания объектов -->
-    <video width="640" height="480" controls>
-        console.log(video_path)
-        <source src="{{ processed_video_path|escape }}">
-        Ваш браузер не поддерживает воспроизведение видео.
-    </video>
+    <!-- Панель с видеоплеером -->
+    <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+        <div class="card-body">
+            <h5 class="card-title text-center mb-4">Видео с результатами распознавания объектов</h5>
+            
+            <!-- Видео с результатами распознавания объектов -->
+            <div class="text-center">
+                <video width="640" height="480" controls>
+                    <source src="{{ processed_video_path|escape }}">
+                    Ваш браузер не поддерживает воспроизведение видео.
+                </video>
+            </div>
+        </div>
+    </div>
 
-    <a href="{% url 'view_result:view_video' %}" class="btn btn-primary mt-3">Обратно к загрузке видео</a>
+    <!-- Кнопка для возврата к загрузке видео -->
+    <div class="text-center">
+        <a href="{% url 'view_result:view_video' %}" class="btn btn-primary mt-3">Обратно к загрузке видео</a>
+    </div>
 </div>
 {% endblock %}
+
