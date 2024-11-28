@@ -7,13 +7,23 @@
     <h1 class="mb-4 text-center">Подготовка датасета</h1>
     <form method="post" id="dataset-form" class="needs-validation" novalidate>
         {% csrf_token %}
+        <div class="row">
 
-        <!-- Поле для названия датасета -->
-        <div class="mb-4">
-            <label for="id_dataset_name" class="form-label">{{ form.dataset_name.label }}</label>
-            {{ form.dataset_name|add_class:"form-control" }}            
-            <div class="form-text">{{ form.dataset_name.help_text }}</div>
+        <!-- Поля для названия  и описания датасета -->
+        <div class="col-md-6">
+            <div class="mb-4">
+                <label for="id_dataset_name" class="form-label">{{ form.dataset_name.label }}</label>
+                {{ form.dataset_name|add_class:"form-control" }}            
+                <div class="form-text">{{ form.dataset_name.help_text }}</div>
+            </div>
         </div>
+        <div class="col-md-6">
+            <div class="mb-4">
+                <label for="id_dataset_description" class="form-label">{{ form.dataset_description.label }}</label>
+                {{ form.dataset_description|add_class:"form-control" }}            
+                <div class="form-text">{{ form.dataset_description.help_text }}</div>
+            </div>
+        </div>        
         <div class="mb-4">
             <label class="form-label">{{ form.sequences.label }}</label>
             <div class="form-text mb-2">{{ form.sequences.help_text }}</div>
@@ -22,7 +32,6 @@
                     <tr>
                         <th>Выбрать</th>
                         <th>Название</th>
-                        <th>Описание</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -30,7 +39,6 @@
                     <tr>
                         <td>{{ sequence.tag }}</td>  <!-- чекбокс -->
                         <td>{{ sequence.choice_label }}</td>  <!-- название Sequence -->
-                        <td>{{ sequence.choice_value }}</td> <!-- пример: описание Sequence -->
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -38,7 +46,6 @@
         </div>        
 
         <!-- Поля для процентов -->
-        <div class="row">
             <div class="col-md-4">
                 <div class="mb-3">
                     <label for="id_train_percentage" class="form-label">{{ form.train_percentage.label }}</label>
@@ -81,6 +88,7 @@
                 <th>Название</th>
                 <th>Дата создания</th>
                 <th>Описание</th>
+                <th>Действия</th> <!-- Новый столбец -->
             </tr>
         </thead>
         <tbody>
@@ -89,13 +97,19 @@
                     <td>{{ dataset.name }}</td>
                     <td>{{ dataset.created_at|date:"d.m.Y H:i" }}</td>
                     <td>{{ dataset.description|default:"-" }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm delete-dataset" data-id="{{ dataset.id }}">
+                            Удалить
+                        </button>
+                    </td> <!-- Кнопка удаления -->
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center">Нет доступных датасетов</td>
+                    <td colspan="4" class="text-center">Нет доступных датасетов</td>
                 </tr>
             {% endfor %}
         </tbody>
+        
     </table>
 </div>
 
@@ -162,5 +176,37 @@
 
     // Инициализация начального значения для test_percentage
     calculateTestPercentage();
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Обработчик для кнопок удаления
+        document.querySelectorAll(".delete-dataset").forEach(button => {
+            button.addEventListener("click", function () {
+                const datasetId = this.dataset.id;
+    
+                if (confirm("Вы уверены, что хотите удалить этот датасет?")) {
+                    fetch(`/delete-dataset/${datasetId}/`, {
+                        method: "DELETE",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "X-CSRFToken": "{{ csrf_token }}" // Обеспечиваем защиту CSRF
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            alert("Датасет успешно удален.");
+                            location.reload(); // Перезагружаем страницу
+                        } else {
+                            alert(`Ошибка: ${data.message}`);
+                        }
+                    })
+                    .catch(error => {
+                        alert(`Произошла ошибка: ${error.message}`);
+                    });
+                }
+            });
+        });
+    });
+    
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 import shutil
 import os
-import subprocess
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.files.base import ContentFile
 from django.views.decorators.http import require_POST
@@ -343,6 +343,7 @@ def prepare_dataset_view(request):
         form = DatasetSplitForm(request.POST)
         if form.is_valid():
             dataset_name = form.cleaned_data['dataset_name']
+            dataset_description = form.cleaned_data['dataset_description']
             train_percentage = form.cleaned_data['train_percentage']
             val_percentage = form.cleaned_data['val_percentage']
             selected_sequences = form.cleaned_data['sequences']  # Получаем выбранные Sequences
@@ -359,6 +360,7 @@ def prepare_dataset_view(request):
                 # Запускаем функцию подготовки датасета с передачей выбранных Sequences
                 prepare_dataset(
                     dataset_name=dataset_name,
+                    dataset_description = dataset_description,
                     train_percentage=train_percentage,
                     val_percentage=val_percentage,
                     selected_sequences=selected_sequences
@@ -378,3 +380,26 @@ def prepare_dataset_view(request):
         'datasets': datasets,
         'dataset_table_form': DatasetTableForm(),
         })
+
+@csrf_exempt
+def delete_dataset(request, dataset_id):
+    if request.method == "DELETE":
+        # Получаем объект датасета
+        dataset = get_object_or_404(Dataset, id=dataset_id)
+        
+        # Путь к файлам датасета
+        dataset_path = os.path.join(settings.MEDIA_ROOT, 'yolo_dataset', dataset.name)
+        
+        try:
+            # Удаляем директорию, если она существует
+            if os.path.exists(dataset_path):
+                shutil.rmtree(dataset_path)
+            
+            # Удаляем запись из базы данных
+            dataset.delete()
+            return JsonResponse({"status": "success", "message": "Датасет и его файлы успешно удалены."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"Ошибка при удалении файлов: {e}"}, status=500)
+
+    return JsonResponse({"status": "error", "message": "Неверный метод запроса."}, status=400)
+

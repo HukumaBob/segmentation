@@ -85,6 +85,12 @@ class DatasetSplitForm(forms.Form):
         required=True,
         help_text="Уникальное название для сохранения датасета."
     )    
+    dataset_description = forms.CharField(
+        label="Описание датасета",
+        max_length=255,
+        required=False,
+        help_text="Описание датасета."
+    )        
     train_percentage = forms.IntegerField(
         label="Процент обучения",
         min_value=0,

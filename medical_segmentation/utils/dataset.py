@@ -12,7 +12,7 @@ MINIMAL_BOX_WIDTH = 0.1
 MINIMAL_BOX_HEIGHT = 0.1
 
 
-def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_sequences):
+def prepare_dataset(dataset_name, dataset_description, train_percentage, val_percentage, selected_sequences):
     """
     Функция для подготовки датасета в форматах YOLO и COCO.
 
@@ -156,7 +156,7 @@ def prepare_dataset(dataset_name, train_percentage, val_percentage, selected_seq
 
     # Обновляем описание датасета, если он только что создан
     if created:
-        dataset.description = "Автоматически созданный датасет."
+        dataset.description = dataset_description
         dataset.save()
 
     print(f"Датасет '{dataset_name}' успешно подготовлен!")
