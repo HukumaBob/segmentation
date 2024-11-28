@@ -101,7 +101,10 @@
                         <button type="button" class="btn btn-danger btn-sm delete-dataset" data-id="{{ dataset.id }}">
                             Удалить
                         </button>
-                    </td> <!-- Кнопка удаления -->
+                        <a href="{% url 'data_preparation:download-dataset' dataset.id %}" class="btn btn-success btn-sm">
+                            Скачать
+                        </a>
+                    </td> <!-- Кнопки удаления и скачивания -->
                 </tr>
             {% empty %}
                 <tr>
@@ -109,8 +112,7 @@
                 </tr>
             {% endfor %}
         </tbody>
-        
-    </table>
+    </table>    
 </div>
 
 <script>

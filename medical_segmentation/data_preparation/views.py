@@ -1,5 +1,7 @@
+from io import BytesIO
 import shutil
 import os
+import zipfile
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.files.base import ContentFile
@@ -15,7 +17,7 @@ from .forms import DatasetSplitForm, DatasetTableForm, FrameSequenceForm, VideoF
 from .models import Dataset, Video, Sequences, Tag
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 import logging
 logger = logging.getLogger(__name__)
 
@@ -403,3 +405,33 @@ def delete_dataset(request, dataset_id):
 
     return JsonResponse({"status": "error", "message": "Неверный метод запроса."}, status=400)
 
+def download_dataset(request, dataset_id):
+    # Получаем объект датасета
+    dataset = get_object_or_404(Dataset, id=dataset_id)
+    
+    try:
+        # Путь к директории датасета
+        dataset_path = os.path.join(settings.MEDIA_ROOT, 'yolo_dataset', dataset.name)
+
+        # Проверяем, существует ли директория
+        if not os.path.exists(dataset_path):
+            return JsonResponse({"status": "error", "message": "Директория датасета не найдена."}, status=404)
+
+        # Создаём ZIP-архив в памяти
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            # Проходим по всем файлам и директориям внутри dataset_path
+            for root, dirs, files in os.walk(dataset_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, dataset_path)  # Относительный путь для ZIP
+                    zip_file.write(file_path, arcname=arcname)
+
+        # Подготавливаем ZIP-файл для скачивания
+        zip_buffer.seek(0)
+        response = HttpResponse(zip_buffer, content_type="application/zip")
+        response["Content-Disposition"] = f'attachment; filename="{dataset.name}.zip"'
+        return response
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"Ошибка при создании ZIP-архива: {e}"}, status=500)

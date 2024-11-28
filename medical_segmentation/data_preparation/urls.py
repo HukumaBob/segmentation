@@ -17,4 +17,5 @@ urlpatterns = [
     path('<int:pk>/delete/', views.TagDeleteView.as_view(), name='tag_delete'),   
     path("prepare-dataset/", views.prepare_dataset_view, name="prepare_dataset"), 
     path('delete-dataset/<int:dataset_id>/', views.delete_dataset, name='delete-dataset'),
+    path('download-dataset/<int:dataset_id>/', views.download_dataset, name='download-dataset'),
 ]

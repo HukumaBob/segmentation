@@ -340,6 +340,7 @@
                 <th>Описание</th>
                 <th>Теги</th>
                 <th>Точность</th>
+                <th>Действия</th> 
             </tr>
         </thead>
         <tbody>
@@ -350,14 +351,22 @@
                     <td>{{ model.description|default:"-" }}</td>
                     <td>{{ model.training_tags|default:"-" }}</td>
                     <td>{{ model.accuracy|default:"-" }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm delete-model" data-id="{{ model.id }}">
+                            Удалить
+                        </button>
+                        <a href="{% url 'nettrain:download-model' model.id %}" class="btn btn-success btn-sm">
+                            Скачать
+                        </a>
+                    </td> <!-- Кнопки удаления и скачивания -->
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center">Нет доступных моделей</td>
+                    <td colspan="6" class="text-center">Нет доступных моделей</td>
                 </tr>
             {% endfor %}
-        </tbody>
-    </table>
+        </tbody>        
+    </table>    
 </div>
 
 <style>
@@ -374,4 +383,36 @@
         }
     }    
 </style>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Обработчик для кнопок удаления моделей
+        document.querySelectorAll(".delete-model").forEach(button => {
+            button.addEventListener("click", function () {
+                const modelId = this.dataset.id;
+    
+                if (confirm("Вы уверены, что хотите удалить эту модель?")) {
+                    fetch(`/delete-model/${modelId}/`, {
+                        method: "DELETE",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "X-CSRFToken": "{{ csrf_token }}" // Используем CSRF токен для защиты
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            alert("Модель успешно удалена.");
+                            location.reload(); // Перезагружаем страницу
+                        } else {
+                            alert(`Ошибка: ${data.message}`);
+                        }
+                    })
+                    .catch(error => {
+                        alert(`Произошла ошибка: ${error.message}`);
+                    });
+                }
+            });
+        });
+    });
+</script>    
 {% endblock %}

@@ -1,5 +1,12 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from io import BytesIO
+import json
+import os
+import shutil
+import zipfile
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse, JsonResponse
 from data_preparation.models import Dataset
 from nettrain.models import NeuralNetworkVersion
 from utils.model_train import save_model_metadata, train_yolo_model
@@ -65,3 +72,57 @@ def start_training_view(request):
         'datasets': datasets,
         'trained_models': trained_models
         })
+
+def delete_model(request, model_id):
+    if request.method == "DELETE":
+        # Получаем объект модели
+        model = get_object_or_404(NeuralNetworkVersion, id=model_id)
+        
+        try:
+            # Формируем директорию на основе model_file
+            model_file_path = model.model_file.path  # Полный путь к файлу (например, /media/saved_models/my_model/weights/best.pt)
+            model_dir = os.path.dirname(os.path.dirname(model_file_path))  # Убираем /weights/best.pt
+
+            # Удаляем директорию, если она существует
+            if os.path.exists(model_dir):
+                shutil.rmtree(model_dir)
+            
+                # Удаляем запись из базы данных
+                model.delete()
+                return JsonResponse({"status": "success", "message": "Модель и её файлы успешно удалены."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"Ошибка при удалении файлов модели: {e}"}, status=500)
+
+    return JsonResponse({"status": "error", "message": "Неверный метод запроса."}, status=400)
+
+def download_model(request, model_id):
+    # Получаем объект модели
+    model = get_object_or_404(NeuralNetworkVersion, id=model_id)
+    
+    try:
+        # Путь к файлу best.pt
+        best_pt_path = model.model_file.path  # Полный путь к файлу best.pt
+
+        # Проверяем, существует ли файл best.pt
+        if not os.path.exists(best_pt_path):
+            return JsonResponse({"status": "error", "message": "Файл best.pt не найден."}, status=404)
+
+        # Создаём содержимое tags.json из поля training_tags
+        tags_content = json.dumps(model.training_tags, indent=4, ensure_ascii=False)
+        
+        # Создаём ZIP-архив в памяти
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            # Добавляем файл best.pt
+            zip_file.write(best_pt_path, arcname="best.pt")
+            # Добавляем tags.json напрямую
+            zip_file.writestr("tags.json", tags_content)
+
+        # Подготавливаем ZIP-файл для скачивания
+        zip_buffer.seek(0)
+        response = HttpResponse(zip_buffer, content_type="application/zip")
+        response["Content-Disposition"] = f'attachment; filename="{model.version_number}.zip"'
+        return response
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"Ошибка при создании ZIP-архива: {e}"}, status=500)
