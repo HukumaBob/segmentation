@@ -60,7 +60,8 @@
 <!-- Модальное окно -->
 <div id="frameModal" class="modal position-fixed" data-frame-id="">
     <div class="modal-content">
-        <span class="close-btn">&times;</span>
+        <!-- Перенесли кнопку "Закрыть" -->
+        <button id="btn-close" class="btn btn-secondary">Закрыть</button>
 
         <!-- Flex-контейнер для карточек -->
         <div class="d-flex w-100 h-100">
@@ -139,6 +140,14 @@
                                 {% trans "Subtract from existing masks" %}
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Поясняющий блок -->
+                    <div class="alert alert-info mt-3" role="alert">
+                        {% trans "Controls:" %}<br>
+                        - {% trans "Left Click (LMB): Positive mark" %}<br>
+                        - {% trans "Right Click (RMB): Negative mark" %}<br>
+                        - {% trans "CTRL + LMB: Remove mark" %}
                     </div>
                 </div>
             </div>
@@ -232,19 +241,7 @@
         align-items: left;
         justify-content: flex-start;
     }
-    
-    .close-btn {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 30px;
-        color: #aaa;
-        cursor: pointer;
-    }
-    
-    .close-btn:hover, .close-btn:focus {
-        color: #000;
-    }
+
     
     /* Стили для контейнера с масками */
     .mask-container {
@@ -288,7 +285,7 @@
         const modal = document.getElementById('frameModal');
         const modalImage = document.getElementById('modalImage');
         const modalFileName = document.getElementById('modalFileName');
-        const closeButton = document.querySelector('.close-btn');
+        const closeButton = document.getElementById('btn-close');
         const maskCanvas = document.getElementById('maskCanvas');
         const tagSelect = document.getElementById('tagSelect');  // Получаем элемент select для тегов
         const colorSelect = document.getElementById('colorSelect');  // Получаем элемент выбора цвета
@@ -431,6 +428,10 @@ function showModal(frameId, frameUrl, frameName) {
     activeFrameId = frameId;
     maskListContainer.innerHTML = '';  // Очищаем контейнер списка масок
 
+    // Восстанавливаем состояние селекторов
+    restoreSelectorsState();
+
+
     setTimeout(() => {
         // Устанавливаем размер canvas
         canvasWidth = modalImage.clientWidth;
@@ -527,7 +528,8 @@ extrapolateBtn.addEventListener('click', () => {
             modalFileName.textContent = '';
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
             activeFrameId = null;
-            points = [];  // Очищаем все точки при закрытии
+            points = [];  // Очищаем все точки при закрытии                            
+            saveSelectorsState(); // Сохраняем состояние селекторов
         }
 
         // Функция отрисовки всех точек на canvas с метками координат
@@ -885,6 +887,57 @@ frameCards.forEach(card => {
             location.reload();  // Перезагружаем страницу
         }
     });    
+
+// Сохранение состояния селекторов
+function saveSelectorsState() {
+    const categorySelect = document.getElementById('categorySelect');
+    const tagSelect = document.getElementById('tagSelect');
+
+    if (categorySelect && tagSelect) {
+        localStorage.setItem('categorySelectValue', categorySelect.value);
+        localStorage.setItem('tagSelectValue', tagSelect.value);
+        console.log("Сохранено состояние селекторов:", {
+            category: categorySelect.value,
+            tag: tagSelect.value,
+        });
+    }
+}
+
+function restoreSelectorsState() {
+    const categorySelect = document.getElementById('categorySelect');
+    const tagSelect = document.getElementById('tagSelect');
+
+    if (!categorySelect || !tagSelect) {
+        console.error("Selectors not found in DOM!");
+        return;
+    }
+
+    const savedCategory = localStorage.getItem('categorySelectValue');
+    const savedTag = localStorage.getItem('tagSelectValue');
+
+    if (savedCategory) {
+        // Устанавливаем сохранённое значение категории
+        categorySelect.value = savedCategory;
+
+        // Триггерим событие 'change', чтобы загрузить связанные теги
+        categorySelect.dispatchEvent(new Event('change'));
+
+        // Подписываемся на изменение DOM для заполнения тегов
+        const observer = new MutationObserver(() => {
+            const tagOptions = Array.from(tagSelect.options);
+            if (tagOptions.some(option => option.value === savedTag)) {
+                // Устанавливаем сохранённое значение для тегов
+                tagSelect.value = savedTag;
+                console.log("Восстановлено значение тегов:", savedTag);
+                observer.disconnect(); // Останавливаем наблюдателя
+            }
+        });
+
+        // Начинаем наблюдать за изменениями в `tagSelect`
+        observer.observe(tagSelect, { childList: true });
+    }
+}
+   
     });
 </script>
 
