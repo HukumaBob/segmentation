@@ -1,5 +1,4 @@
 import os
-from PIL import ImageFont
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -40,11 +39,6 @@ def view_video(request):
         # Путь для сохранения обработанного видео в формате WebM
         processed_video_path = os.path.join(settings.MEDIA_ROOT, 'videos', f"processed_{filename}.webm")
         out = cv2.VideoWriter(processed_video_path, fourcc, fps, (width, height))
-
-        # Загружаем шрифт для кириллицы
-        # font_path = os.path.join(settings.BASE_DIR, 'fonts', 'roboto', 'Roboto-Black.ttf')  # Замените на путь к вашему TTF-файлу
-        # font = ImageFont.truetype(font_path, 24)  # Размер шрифта можно изменить по вашему усмотрению
-
 
         # Обработка каждого кадра видео
         while cap.isOpened():
