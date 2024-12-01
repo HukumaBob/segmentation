@@ -3,11 +3,9 @@ import json
 import os
 import shutil
 import zipfile
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, JsonResponse
-from data_preparation.models import Dataset
+from data_preparation.models import Dataset, Tag
 from nettrain.models import NeuralNetworkVersion
 from utils.model_train import save_model_metadata, train_yolo_model
 import threading
@@ -107,8 +105,27 @@ def download_model(request, model_id):
         if not os.path.exists(best_pt_path):
             return JsonResponse({"status": "error", "message": "Файл best.pt не найден."}, status=404)
 
-        # Создаём содержимое tags.json из поля training_tags
-        tags_content = json.dumps(model.training_tags, indent=4, ensure_ascii=False)
+        # Создаём содержимое tags.json
+        training_tags = model.training_tags  # Поле уже содержит список
+        if not isinstance(training_tags, list):
+            return JsonResponse({"status": "error", "message": "Поле training_tags имеет некорректный формат."}, status=400)
+        
+        tags_data = {}
+
+        # Получаем все теги и категории
+        all_tags = Tag.objects.filter(name__in=training_tags).select_related('category')
+        
+        # Проходим по training_tags в заданном порядке
+        for idx, tag_name in enumerate(training_tags):
+            tag = all_tags.filter(name=tag_name).first()  # Ищем тег с таким именем
+            if not tag:
+                continue  # Если тег не найден, пропускаем
+            category_name = tag.category.tags_category  # Имя категории
+            if category_name not in tags_data:
+                tags_data[category_name] = {}
+            tags_data[category_name][idx] = tag.name  # Используем индекс из training_tags
+
+        tags_content = json.dumps(tags_data, indent=4, ensure_ascii=False)
         
         # Создаём ZIP-архив в памяти
         zip_buffer = BytesIO()
