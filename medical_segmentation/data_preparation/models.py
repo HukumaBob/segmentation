@@ -8,7 +8,6 @@ import logging
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
-# from segmentation.models import FrameSequence
 
 class TagsCategory(models.Model):
     tags_category = models.CharField(_('Category of tag'), max_length=100)
