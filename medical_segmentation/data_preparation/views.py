@@ -60,6 +60,7 @@ def upload_multiple_images(request):
         if form.is_valid():
             # Получаем данные из формы
             features = form.cleaned_data['features']
+            procedure = form.cleaned_data['procedure']
             left_crop = form.cleaned_data['left_crop'] or 0
             right_crop = form.cleaned_data['right_crop'] or 0
             top_crop = form.cleaned_data['top_crop'] or 0
@@ -70,13 +71,14 @@ def upload_multiple_images(request):
             # Создаём новую последовательность
             sequence = Sequences.objects.create(
                 features=features,
+                procedure=procedure,
                 left_crop=left_crop,
                 right_crop=right_crop,
                 top_crop=top_crop,
                 bottom_crop=bottom_crop,
-                start_time=0,  # можно заменить на данные, если нужно
-                duration=0,    # можно заменить на данные, если нужно
-                fps=1          # стандартное значение или заменить
+                start_time=0,  
+                duration=0,    
+                fps=1          
             )
 
             # Обрабатываем множественные файлы

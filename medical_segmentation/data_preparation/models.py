@@ -8,6 +8,10 @@ import logging
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
+class Procedure(models.Model):
+    procedure = models.CharField(_('Medical procedure'), max_length=100)
+    def __str__(self):
+        return self.procedure 
 
 class TagsCategory(models.Model):
     tags_category = models.CharField(_('Category of tag'), max_length=100)
@@ -16,6 +20,10 @@ class TagsCategory(models.Model):
 
 class Tag(models.Model):
     category = models.ForeignKey(TagsCategory, related_name='tags', on_delete=models.CASCADE, verbose_name=_("Tags category"))
+    procedure = models.ForeignKey(
+        Procedure, related_name='procedures', on_delete=models.DO_NOTHING,
+        null=True, blank=True, verbose_name=_("Medical procedures")
+        )
     name = models.CharField(_('Name'), max_length=100)
     code = models.CharField(null=True, max_length=10, default='0000000000', blank=True, verbose_name=_('Code of tag'))
     description = models.TextField(_('Description'), blank=True, null=True)
@@ -101,6 +109,10 @@ class Sequences(models.Model):
         null=True,
         blank=True
         )
+    procedure = models.ForeignKey(
+        Procedure, related_name='sequence_procedures', on_delete=models.DO_NOTHING,
+        null=True, blank=True, verbose_name=_("Medical procedures")
+        )    
     features = models.CharField(max_length=255, verbose_name=_("Frames features"))
     start_time = models.IntegerField(null=False, default=0, verbose_name=_("Start time"))
     duration = models.IntegerField(null=False, default=0, verbose_name=_("Duration of sequence"))

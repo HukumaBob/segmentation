@@ -1,7 +1,7 @@
 from django import forms
 
 from segmentation.models import FrameSequence
-from .models import Dataset, Tag, Sequences, Video
+from .models import Dataset, Procedure, Tag, Sequences, Video
 from django.utils.translation import gettext_lazy as _
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -58,11 +58,18 @@ class VideoUploadForm(forms.ModelForm):
         }
 
 class FrameSequenceForm(forms.Form):
+    procedure = forms.ModelChoiceField(
+        queryset=Procedure.objects.all(),
+        label=_("Procedure")
+        )    
     features = forms.CharField(
         max_length=255,
         required=True,
         label="Sequence Features"
     )
+    start_time = forms.IntegerField(required=False, initial=0, label="Start time")
+    duration = forms.IntegerField(required=False, initial=0, label="Duration")
+    fps = forms.IntegerField(required=False, initial=0, label="FPS")
     left_crop = forms.IntegerField(required=False, initial=0, label="Left Crop")
     right_crop = forms.IntegerField(required=False, initial=0, label="Right Crop")
     top_crop = forms.IntegerField(required=False, initial=0, label="Top Crop")

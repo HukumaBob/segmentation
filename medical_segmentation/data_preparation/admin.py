@@ -2,11 +2,17 @@ from django.contrib import admin
 from .models import (
     Sequences,
     ImageUpload,
+    Procedure,
     TagsCategory,
     Tag,
     Video,
     Dataset
     )
+
+@admin.register(Procedure)
+class ProcedureAdmin(admin.ModelAdmin):
+    list_display = ('id', 'procedure')
+    search_fields = ('procedure',)
 
 @admin.register(TagsCategory)
 class TagsCategoryAdmin(admin.ModelAdmin):
@@ -15,7 +21,7 @@ class TagsCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'code', 'category', 'name', 'description')
+    list_display = ('id', 'code', 'procedure', 'category', 'name', 'description')
     search_fields = ('name',)    
 
 @admin.register(ImageUpload)
@@ -28,6 +34,7 @@ class ImageUploadAdmin(admin.ModelAdmin):
 class SequencesAdmin(admin.ModelAdmin):
     list_display = ('id', 
                     'video',
+                    'procedure',
                     'features', 
                     'start_time',
                     'duration',

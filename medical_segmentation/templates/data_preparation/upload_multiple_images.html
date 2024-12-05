@@ -1,46 +1,67 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load widget_tweaks %}
 {% block content %}
-<div class="container">
-  <h2>{% trans "Upload Frame Sequences" %}</h2>
-  <form method="POST" enctype="multipart/form-data">
+<div class="container mt-4">
+  <h2 class="mb-4">{% trans "Upload Frame Sequences" %}</h2>
+  <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
     {% csrf_token %}
-    <div class="mb-3">
-      <label for="features">{% trans "Sequence Features" %}</label>
-      <input type="text" name="features" id="features" class="form-control" required>
+    <div class="row g-3">
+      <!-- Sequence Features -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="features" class="form-label">{% trans "Sequence Features" %}</label>
+          {{ form.features|add_class:"form-control" }}
+        </div>
+      </div>
+      
+      <!-- Procedure -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="procedure" class="form-label">{% trans "Exam" %}</label>
+          {{ form.procedure|add_class:"form-select" }}
+        </div>
+      </div>
+      
+      <!-- Cropping fields -->
+      <div class="col-md-3">
+        <div class="form-group">
+          <label for="left_crop" class="form-label">{% trans "Left Crop" %}</label>
+          {{ form.left_crop|add_class:"form-control" }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-group">
+          <label for="right_crop" class="form-label">{% trans "Right Crop" %}</label>
+          {{ form.right_crop|add_class:"form-control" }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-group">
+          <label for="top_crop" class="form-label">{% trans "Top Crop" %}</label>
+          {{ form.top_crop|add_class:"form-control" }}
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-group">
+          <label for="bottom_crop" class="form-label">{% trans "Bottom Crop" %}</label>
+          {{ form.bottom_crop|add_class:"form-control" }}
+        </div>
+      </div>
+      <!-- Upload Images -->
+      <div class="col-12">
+        <div class="form-group">
+          <label for="images" class="form-label">{% trans "Upload Images" %}</label>
+          <input type="file" name="images" id="images" multiple class="form-control">
+        </div>
+      </div>
     </div>
-    <div class="row">
-      <div class="col-md-2">
-        <label for="left_crop">{% trans "Left Crop" %}</label>
-        <input type="number" name="left_crop" id="left_crop" class="form-control" value="0">
-      </div>
-      <div class="col-md-2">
-        <label for="right_crop">{% trans "Right Crop" %}</label>
-        <input type="number" name="right_crop" id="right_crop" class="form-control" value="0">
-      </div>
-      <div class="col-md-2">
-        <label for="top_crop">{% trans "Top Crop" %}</label>
-        <input type="number" name="top_crop" id="top_crop" class="form-control" value="0">
-      </div>
-      <div class="col-md-2">
-        <label for="bottom_crop">{% trans "Bottom Crop" %}</label>
-        <input type="number" name="bottom_crop" id="bottom_crop" class="form-control" value="0">
-      </div>
-      <div class="col-md-2">
-        <label for="width">{% trans "Frame Width" %}</label>
-        <input type="number" name="width" id="width" class="form-control" value="640">
-      </div>
-      <div class="col-md-2">
-        <label for="height">{% trans "Frame Height" %}</label>
-        <input type="number" name="height" id="height" class="form-control" value="640">
-      </div>
+    
+    <!-- Submit Button -->
+    <div class="d-flex justify-content-end mt-4">
+      <button type="submit" class="btn btn-primary btn-lg">{% trans "Upload" %}</button>
     </div>
-    <div class="mb-3 mt-3">
-      <label for="images">{% trans "Upload Images" %}</label>
-      <input type="file" name="images" id="images" multiple class="form-control">
-    </div>
-    <button type="submit" class="btn btn-primary">{% trans "Upload" %}</button>
   </form>
 </div>
 {% endblock %}

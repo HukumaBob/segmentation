@@ -91,17 +91,23 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
+                                <label for="exam">{% trans "Examination:" %}</label>
+                                <input type="text" id="exam" class="form-control" placeholder="{% trans "Enter Sequence Name" %}">
+                            </div>
+                        </div>                        
+                        <div class="col-md-2">
+                            <div class="form-group">
                                 <label for="startTime">{% trans "Start Time (s):" %}</label>
                                 <input type="number" id="startTime" class="form-control" value="0" step="0.1" min="0">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="duration">{% trans "Duration (s):" %}</label>
                                 <input type="number" id="duration" class="form-control" value="10" step="0.1" min="0">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="fps">{% trans "FPS:" %}</label>
                                 <input type="number" id="fps" class="form-control" value="10" step="1" min="1">
