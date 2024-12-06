@@ -91,8 +91,8 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="exam">{% trans "Examination:" %}</label>
-                                <input type="text" id="exam" class="form-control" placeholder="{% trans "Enter Sequence Name" %}">
+                                <label for="procedure">{% trans "Examination:" %}</label>
+                                <input type="text" id="procedure" class="form-control" placeholder="{% trans "Enter Sequence Name" %}">
                             </div>
                         </div>                        
                         <div class="col-md-2">
@@ -354,6 +354,7 @@
                 createFramesButton.addEventListener('click', function () {
                     const videoId = this.dataset.videoId;
                     const sequenceName = document.getElementById('sequenceName').value;
+                    const procedure = document.getElementById('procedure').value;
                     const startTime = document.getElementById('startTime').value;
                     const duration = document.getElementById('duration').value;
                     const fps = document.getElementById('fps').value;
@@ -364,7 +365,7 @@
 
                     if (videoId && sequenceName) {
                         const createUrl = `{% url 'data_preparation:create_frame_sequence' 0 %}`.replace(0, videoId) +
-                            `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
+                            `?sequence_name=${encodeURIComponent(sequenceName)}&start_time=${procedure}&start_time=${startTime}&duration=${duration}&fps=${fps}` +
                             `&left_crop=${leftCrop}&right_crop=${rightCrop}&top_crop=${topCrop}&bottom_crop=${bottomCrop}`;
 
                         fetch(createUrl, {

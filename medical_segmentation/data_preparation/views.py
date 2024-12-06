@@ -14,7 +14,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from utils.dataset import prepare_dataset
 from utils.crop_frame import crop_frame
 from .forms import DatasetSplitForm, DatasetTableForm, FrameSequenceForm, VideoForm, TagForm
-from .models import Dataset, Video, Sequences, Tag
+from .models import Dataset, Procedure, Video, Sequences, Tag
 from segmentation.models import FrameSequence
 from utils.ffmpeg_convert import extract_frames_from_video, convert_to_webm, save_webm
 from django.http import HttpResponse, JsonResponse
@@ -234,8 +234,12 @@ def create_frame_sequence(request, video_id):
     logger.info(f"Create frame sequence called for video: {video_id}")
     video = get_object_or_404(Video, id=video_id)
 
-    # Получаем параметры из запроса
+    # Получаем параметры из запроса 
     sequence_name = request.GET.get('sequence_name', 'Default Sequence Name')
+    # Получаем объект Procedure из ID
+    procedure_id = request.GET.get('procedure', 1)  # По умолчанию используем ID = 1
+    procedure = get_object_or_404(Procedure, id=procedure_id)  # Преобразуем ID в объект Procedure
+
     start_time = float(request.GET.get('start_time', 0))
     duration = float(request.GET.get('duration', 10))
     fps = int(request.GET.get('fps', 10))
@@ -259,6 +263,7 @@ def create_frame_sequence(request, video_id):
 
     # Создаем или получаем существующий объект Sequences
     sequence, created = Sequences.objects.get_or_create(
+        procedure=procedure,
         video=video,
         features=sequence_name,
         start_time=start_time,
